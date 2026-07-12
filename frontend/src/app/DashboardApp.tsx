@@ -1986,7 +1986,7 @@ function MaintenanceScreen() {
       <div>
         <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide mb-3">Active & Scheduled</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {maintenance.filter(m => m.status !== "completed").map(m => (
+          {maintenance.filter(m => m.status !== "completed" && m.status !== "closed").map(m => (
             <div key={m.id} className="bg-white rounded-xl border border-slate-100 shadow-sm p-5 flex flex-col justify-between">
               <div>
                 <div className="flex items-start justify-between mb-4">
@@ -2018,7 +2018,7 @@ function MaintenanceScreen() {
               )}
             </div>
           ))}
-          {maintenance.filter(m => m.status !== "completed").length === 0 && (
+          {maintenance.filter(m => m.status !== "completed" && m.status !== "closed").length === 0 && (
             <p className="col-span-3 py-6 text-center text-[12px] text-slate-400 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">No active maintenance tasks scheduled.</p>
           )}
         </div>
