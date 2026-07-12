@@ -14,6 +14,7 @@ import {
   Eye, Edit2, Trash2, CheckCircle, Clock, AlertTriangle, Calendar,
   TrendingUp, TrendingDown, Activity, LogOut, ArrowRight, DollarSign,
   Navigation, X, RefreshCw, Zap, Shield, MapPin, Sun, Moon,
+  Droplet, Receipt
 } from "lucide-react";
 
 import {
@@ -1022,7 +1023,22 @@ function VehiclesScreen() {
               ))}
               {list.length === 0 && (
                 <tr>
-                  <TD colSpan={9} className="text-center py-6 text-slate-400">No vehicles match filters</TD>
+                  <TD colSpan={9}>
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                        <Truck size={20} className="text-slate-400" />
+                      </div>
+                      <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-200">No vehicles found</h3>
+                      <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
+                        {search || filter !== "all" ? "No vehicles match the current filters." : "Add your first vehicle to the fleet registry."}
+                      </p>
+                      {!isReadOnly && !search && filter === "all" && (
+                        <button onClick={() => setShowModal(true)} className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold rounded-xl shadow-sm transition-all flex items-center gap-2">
+                          <Plus size={14} /> Add Vehicle
+                        </button>
+                      )}
+                    </div>
+                  </TD>
                 </tr>
               )}
             </tbody>
@@ -1221,11 +1237,20 @@ function DriversScreen() {
               ))}
               {list.length === 0 && (
                 <tr>
-                  <TD colSpan={8} className="text-center py-12 text-slate-400">
-                    <div className="flex flex-col items-center gap-2">
-                      <Users size={24} className="text-slate-300" />
-                      <p className="text-[14px] font-medium text-slate-600">No drivers found</p>
-                      <p className="text-[12px] text-slate-500">Add a driver to get started.</p>
+                  <TD colSpan={8}>
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                        <Users size={20} className="text-slate-400" />
+                      </div>
+                      <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-200">No drivers found</h3>
+                      <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
+                        {search || filter !== "all" ? "No drivers match the current filters." : "Add your first driver to start assigning trips."}
+                      </p>
+                      {!isReadOnly && !search && filter === "all" && (
+                        <button onClick={() => setShowModal(true)} className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold rounded-xl shadow-sm transition-all flex items-center gap-2">
+                          <Plus size={14} /> Add Driver
+                        </button>
+                      )}
                     </div>
                   </TD>
                 </tr>
@@ -1531,7 +1556,22 @@ function DispatchScreen() {
                 ))}
                 {filteredTrips.length === 0 && (
                   <tr>
-                    <TD colSpan={9} className="text-center py-6 text-slate-400">No trips found matching criteria</TD>
+                    <TD colSpan={9}>
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                          <Navigation size={20} className="text-slate-400" />
+                        </div>
+                        <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-200">No trips found</h3>
+                        <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
+                          Create your first trip to start managing fleet operations and dispatching drivers.
+                        </p>
+                        {!isReadOnly && (
+                          <button onClick={() => setViewMode("create")} className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold rounded-xl shadow-sm transition-all flex items-center gap-2">
+                            <Plus size={14} /> Create Trip
+                          </button>
+                        )}
+                      </div>
+                    </TD>
                   </tr>
                 )}
               </tbody>
@@ -2080,7 +2120,17 @@ function MaintenanceScreen() {
               ))}
               {maintenance.length === 0 && (
                 <tr>
-                  <TD colSpan={7} className="text-center py-6 text-slate-400">No service history records found</TD>
+                  <TD colSpan={7}>
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                        <Wrench size={20} className="text-slate-400" />
+                      </div>
+                      <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-200">No service history</h3>
+                      <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
+                        Keep track of vehicle maintenance and repairs here.
+                      </p>
+                    </div>
+                  </TD>
                 </tr>
               )}
             </tbody>
@@ -2268,7 +2318,22 @@ function FuelScreen() {
               ))}
               {fuelLogs.length === 0 && (
                 <tr>
-                  <TD colSpan={8} className="text-center py-6 text-slate-400">No fuel entries logged</TD>
+                  <TD colSpan={8}>
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                        <Droplet size={20} className="text-slate-400" />
+                      </div>
+                      <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-200">No fuel entries</h3>
+                      <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
+                        Log fuel entries to monitor consumption and operational costs.
+                      </p>
+                      {!isReadOnly && (
+                        <button onClick={() => setShowFuel(true)} className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold rounded-xl shadow-sm transition-all flex items-center gap-2">
+                          <Plus size={14} /> Add Fuel Entry
+                        </button>
+                      )}
+                    </div>
+                  </TD>
                 </tr>
               )}
             </tbody>
@@ -2319,7 +2384,22 @@ function FuelScreen() {
               ))}
               {expenses.length === 0 && (
                 <tr>
-                  <TD colSpan={6} className="text-center py-6 text-slate-400">No expenses logged</TD>
+                  <TD colSpan={6}>
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                        <Receipt size={20} className="text-slate-400" />
+                      </div>
+                      <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-200">No expenses logged</h3>
+                      <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
+                        Track other fleet expenses such as tolls, fines, or maintenance parts.
+                      </p>
+                      {!isReadOnly && (
+                        <button onClick={() => setShowExp(true)} className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold rounded-xl shadow-sm transition-all flex items-center gap-2">
+                          <Plus size={14} /> Add Expense
+                        </button>
+                      )}
+                    </div>
+                  </TD>
                 </tr>
               )}
             </tbody>
