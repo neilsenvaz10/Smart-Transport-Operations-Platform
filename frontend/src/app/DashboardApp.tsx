@@ -1,12 +1,18 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useVehicles } from "./hooks/useVehicles";
+import { useDrivers } from "./hooks/useDrivers";
+import { useTrips } from "./hooks/useTrips";
+import { authService } from "./services/authService";
 import {
-  LayoutDashboard, Truck, Users, MapPin, Wrench, Fuel, BarChart3, Settings,
+  LayoutDashboard, Truck, Users, Wrench, Fuel, BarChart3, Settings,
   Search, Bell, ChevronDown, ChevronLeft, ChevronRight, Plus, Download,
   Eye, Edit2, Trash2, CheckCircle, Clock, AlertTriangle, Calendar,
   TrendingUp, TrendingDown, Activity, LogOut, ArrowRight, DollarSign,
-  Navigation, X, RefreshCw, Zap, Shield,
+  Navigation, X, RefreshCw, Zap, Shield, MapPin,
 } from "lucide-react";
+
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -77,89 +83,17 @@ function cn(...c: (string | false | undefined | null)[]): string {
   return c.filter(Boolean).join(" ");
 }
 
-type Screen = "auth" | "dashboard" | "vehicles" | "drivers" | "dispatch" | "maintenance" | "fuel" | "reports" | "settings";
-
-const TODAY = new Date("2025-01-15");
-
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
 import { createContext, useContext, useEffect } from "react";
 
-function useLocalStorageState<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
-  const [state, setState] = useState<T>(() => {
-    try {
-      const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
-    } catch (error) {
-      console.error(error);
-      return initialValue;
-    }
-  });
+type Screen = "dashboard" | "vehicles" | "drivers" | "dispatch" | "maintenance" | "fuel" | "reports" | "settings";
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(state));
-    } catch (error) {
-      console.error(error);
-    }
-  }, [key, state]);
+const TODAY = new Date("2025-01-15");
 
-  return [state, setState];
-}
 
-const INITIAL_VEHICLES = [
-  { id: "V-001", name: "MAN TGX 18.440", type: "Heavy Truck", plate: "ABC-1234", year: 2021, status: "available", mileage: "45,200 mi", odometer: 45200, lastService: "Nov 15, 2024", fuel: "Diesel", capacity: 20.0, acquisitionCost: 120000, region: "Midwest" },
-  { id: "V-002", name: "Volvo FH16 750", type: "Heavy Truck", plate: "XYZ-5678", year: 2020, status: "on-trip", mileage: "78,300 mi", odometer: 78300, lastService: "Oct 22, 2024", fuel: "Diesel", capacity: 25.0, acquisitionCost: 150000, region: "Northeast" },
-  { id: "V-003", name: "Mercedes Actros", type: "Medium Truck", plate: "DEF-9012", year: 2022, status: "in-shop", mileage: "31,100 mi", odometer: 31100, lastService: "Jan 03, 2025", fuel: "Diesel", capacity: 12.0, acquisitionCost: 95000, region: "South" },
-  { id: "V-004", name: "DAF XF 480", type: "Heavy Truck", plate: "GHI-3456", year: 2019, status: "available", mileage: "102,500 mi", odometer: 102500, lastService: "Dec 01, 2024", fuel: "Diesel", capacity: 18.0, acquisitionCost: 110000, region: "Northwest" },
-  { id: "V-005", name: "Scania R500", type: "Heavy Truck", plate: "JKL-7890", year: 2021, status: "on-trip", mileage: "56,800 mi", odometer: 56800, lastService: "Nov 28, 2024", fuel: "Diesel", capacity: 22.0, acquisitionCost: 135000, region: "West" },
-  { id: "V-006", name: "Iveco Stralis XP", type: "Medium Truck", plate: "MNO-1234", year: 2018, status: "retired", mileage: "215,000 mi", odometer: 215000, lastService: "Aug 15, 2024", fuel: "Diesel", capacity: 10.0, acquisitionCost: 85000, region: "East" },
-  { id: "V-007", name: "Ford Transit 350", type: "Light Van", plate: "PQR-5678", year: 2023, status: "available", mileage: "12,300 mi", odometer: 12300, lastService: "Jan 10, 2025", fuel: "Petrol", capacity: 2.5, acquisitionCost: 40000, region: "Southwest" },
-  { id: "V-008", name: "Renault T520", type: "Heavy Truck", plate: "STU-9012", year: 2020, status: "on-trip", mileage: "67,400 mi", odometer: 67400, lastService: "Dec 15, 2024", fuel: "Diesel", capacity: 20.0, acquisitionCost: 115000, region: "Southeast" },
-];
-
-const INITIAL_DRIVERS = [
-  { id: "D-001", name: "James Mitchell", phone: "+1 555-0123", license: "CDL-A", expiry: "2025-08-15", safetyScore: 94, status: "on-duty", trips: 234, vehicle: "V-001" },
-  { id: "D-002", name: "Sarah Chen", phone: "+1 555-0124", license: "CDL-A", expiry: "2026-03-22", safetyScore: 98, status: "on-duty", trips: 312, vehicle: "V-002" },
-  { id: "D-003", name: "Marcus Johnson", phone: "+1 555-0125", license: "CDL-B", expiry: "2025-11-30", safetyScore: 87, status: "available", trips: 189, vehicle: null },
-  { id: "D-004", name: "Elena Rodriguez", phone: "+1 555-0126", license: "CDL-A", expiry: "2025-04-10", safetyScore: 91, status: "on-duty", trips: 267, vehicle: "V-005" },
-  { id: "D-005", name: "David Okafor", phone: "+1 555-0127", license: "CDL-A", expiry: "2026-07-18", safetyScore: 96, status: "on-duty", trips: 445, vehicle: "V-008" },
-  { id: "D-006", name: "Lisa Park", phone: "+1 555-0128", license: "CDL-B", expiry: "2025-02-28", safetyScore: 89, status: "off-duty", trips: 156, vehicle: null },
-  { id: "D-007", name: "Robert Torres", phone: "+1 555-0129", license: "CDL-A", expiry: "2025-09-05", safetyScore: 77, status: "available", trips: 98, vehicle: null },
-];
-
-const INITIAL_TRIPS = [
-  { id: "T-8821", origin: "Chicago, IL", destination: "Detroit, MI", vehicle: "V-002", driver: "Sarah Chen", cargo: "Auto Parts", weight: "12.4t", distance: "281 mi", status: "in-progress", departure: "Jan 15, 08:30", cost: "$1,240", vehicleId: "V-002", driverId: "D-002", finalOdometer: null, fuelConsumed: null, revenue: 2500 },
-  { id: "T-8820", origin: "New York, NY", destination: "Philadelphia, PA", vehicle: "V-005", driver: "Elena Rodriguez", cargo: "Electronics", weight: "8.2t", distance: "95 mi", status: "in-progress", departure: "Jan 15, 07:00", cost: "$480", vehicleId: "V-005", driverId: "D-004", finalOdometer: null, fuelConsumed: null, revenue: 1100 },
-  { id: "T-8819", origin: "Los Angeles, CA", destination: "Las Vegas, NV", vehicle: "V-008", driver: "David Okafor", cargo: "Furniture", weight: "15.8t", distance: "270 mi", status: "in-progress", departure: "Jan 15, 06:00", cost: "$980", vehicleId: "V-008", driverId: "D-005", finalOdometer: null, fuelConsumed: null, revenue: 2100 },
-  { id: "T-8818", origin: "Houston, TX", destination: "Dallas, TX", vehicle: "V-001", driver: "James Mitchell", cargo: "Food & Beverage", weight: "10.5t", distance: "239 mi", status: "pending", departure: "Jan 15, 12:00", cost: "$760", vehicleId: "V-001", driverId: "D-001", finalOdometer: null, fuelConsumed: null, revenue: 1600 },
-  { id: "T-8817", origin: "Seattle, WA", destination: "Portland, OR", vehicle: "V-004", driver: "Marcus Johnson", cargo: "Building Materials", weight: "18.2t", distance: "174 mi", status: "completed", departure: "Jan 14, 09:00", cost: "$620", vehicleId: "V-004", driverId: "D-003", finalOdometer: 102500, fuelConsumed: 120, revenue: 1400 },
-  { id: "T-8816", origin: "Miami, FL", destination: "Orlando, FL", vehicle: "V-007", driver: "Lisa Park", cargo: "Medical Supplies", weight: "3.1t", distance: "235 mi", status: "completed", departure: "Jan 14, 08:00", cost: "$390", vehicleId: "V-007", driverId: "D-006", finalOdometer: 12300, fuelConsumed: 50, revenue: 900 },
-  { id: "T-8815", origin: "Denver, CO", destination: "Albuquerque, NM", vehicle: "V-004", driver: "Robert Torres", cargo: "Industrial Equip.", weight: "22.0t", distance: "451 mi", status: "cancelled", departure: "Jan 13, 07:00", cost: "$1,580", vehicleId: "V-004", driverId: "D-007", finalOdometer: null, fuelConsumed: null, revenue: 0 },
-];
-
-const INITIAL_MAINTENANCE = [
-  { id: "M-001", vehicleName: "Mercedes Actros", vehicleId: "V-003", type: "Engine Repair", technician: "Tom Bradley", start: "2025-01-10", end: "2025-01-20", status: "in-progress", cost: "$3,200", notes: "Injector replacement and full engine service" },
-  { id: "M-002", vehicleName: "Iveco Stralis XP", vehicleId: "V-006", type: "Brake System", technician: "Amy Wilson", start: "2025-01-12", end: "2025-01-14", status: "completed", cost: "$850", notes: "Front brake pad replacement" },
-  { id: "M-003", vehicleName: "MAN TGX 18.440", vehicleId: "V-001", type: "Scheduled Service", technician: "Tom Bradley", start: "2025-01-16", end: "2025-01-16", status: "scheduled", cost: "$450", notes: "50,000 km service interval" },
-];
-
-const INITIAL_FUEL = [
-  { id: "F-001", vehicleName: "MAN TGX 18.440", vehicleId: "V-001", driver: "James Mitchell", date: "2025-01-15", liters: 120, costPer: "$1.45", total: "$174.00", station: "Shell — Chicago, IL", odometer: "45,180 mi" },
-  { id: "F-002", vehicleName: "Volvo FH16 750", vehicleId: "V-002", driver: "Sarah Chen", date: "2025-01-14", liters: 95, costPer: "$1.52", total: "$144.40", station: "BP — Detroit, MI", odometer: "78,250 mi" },
-  { id: "F-003", vehicleName: "Scania R500", vehicleId: "V-005", driver: "Elena Rodriguez", date: "2025-01-14", liters: 110, costPer: "$1.48", total: "$162.80", station: "Chevron — New York, NY", odometer: "56,720 mi" },
-  { id: "F-004", vehicleName: "Renault T520", vehicleId: "V-008", driver: "David Okafor", date: "2025-01-13", liters: 135, costPer: "$1.39", total: "$187.65", station: "Valero — Las Vegas, NV", odometer: "67,340 mi" },
-  { id: "F-005", vehicleName: "DAF XF 480", vehicleId: "V-004", driver: "Marcus Johnson", date: "2025-01-13", liters: 88, costPer: "$1.51", total: "$132.88", station: "Exxon — Seattle, WA", odometer: "102,430 mi" },
-];
-
-const INITIAL_EXPENSES = [
-  { id: "E-001", vehicleName: "MAN TGX 18.440", vehicleId: "V-001", category: "Toll", amount: "$45.50", date: "2025-01-15", description: "I-90 Chicago to Detroit Toll", receipt: true },
-  { id: "E-002", vehicleName: "Volvo FH16 750", vehicleId: "V-002", category: "Parking", amount: "$28.00", date: "2025-01-14", description: "Overnight parking — Detroit Terminal", receipt: true },
-  { id: "E-003", vehicleName: "Scania R500", vehicleId: "V-005", category: "Meal Allowance", amount: "$55.00", date: "2025-01-14", description: "Driver meal allowance — 2 days", receipt: false },
-  { id: "E-004", vehicleName: "Renault T520", vehicleId: "V-008", category: "Repair", amount: "$320.00", date: "2025-01-13", description: "Emergency tire replacement — Roadside", receipt: true },
-  { id: "E-005", vehicleName: "DAF XF 480", vehicleId: "V-004", category: "Toll", amount: "$32.00", date: "2025-01-12", description: "SR-520 Toll — Seattle", receipt: true },
-];
+// ─── DATA ────────────────────────────────────────────────────────────────────
 
 const fuelChartData = [
   { week: "W48", mpg: 7.2, target: 8.0 }, { week: "W49", mpg: 7.8, target: 8.0 },
@@ -191,10 +125,19 @@ const opCostChartData = [
 interface FleetContextType {
   vehicles: any[];
   setVehicles: React.Dispatch<React.SetStateAction<any[]>>;
+  createVehicle: (newVehicle: any) => void;
+  updateVehicle: (payload: { id: string; data: any }) => void;
+  deleteVehicle: (id: string) => void;
   drivers: any[];
   setDrivers: React.Dispatch<React.SetStateAction<any[]>>;
+  createDriver: (newDriver: any) => void;
+  updateDriver: (payload: { id: string; data: any }) => void;
+  deleteDriver: (id: string) => void;
   trips: any[];
   setTrips: React.Dispatch<React.SetStateAction<any[]>>;
+  createTrip: (newTrip: any) => void;
+  updateTrip: (payload: { id: string; data: any }) => void;
+  deleteTrip: (id: string) => void;
   maintenance: any[];
   setMaintenance: React.Dispatch<React.SetStateAction<any[]>>;
   fuelLogs: any[];
@@ -216,13 +159,43 @@ function useFleet() {
 }
 
 function FleetProvider({ children, role, setRole }: { children: React.ReactNode, role: any, setRole: any }) {
-  const [vehicles, setVehicles] = useLocalStorageState("transitops_vehicles_v2", INITIAL_VEHICLES);
-  const [drivers, setDrivers] = useLocalStorageState("transitops_drivers_v2", INITIAL_DRIVERS);
-  const [trips, setTrips] = useLocalStorageState("transitops_trips_v2", INITIAL_TRIPS);
-  const [maintenance, setMaintenance] = useLocalStorageState("transitops_maintenance_v2", INITIAL_MAINTENANCE);
-  const [fuelLogs, setFuelLogs] = useLocalStorageState("transitops_fuel_v2", INITIAL_FUEL);
-  const [expenses, setExpenses] = useLocalStorageState("transitops_expenses_v2", INITIAL_EXPENSES);
-  const [currentUser, setCurrentUser] = useState({ name: "Alex Kumar", roleName: "Fleet Admin", email: "alex.kumar@transitops.com", phone: "+1 555-0100", dept: "Fleet Operations" });
+  const queryClient = useQueryClient();
+  const { vehicles, createVehicle, updateVehicle, deleteVehicle } = useVehicles();
+  const { drivers, createDriver, updateDriver, deleteDriver } = useDrivers();
+  const { trips, createTrip, updateTrip, deleteTrip } = useTrips();
+
+  // The legacy screens mutate these collections via setVehicles(prev => ...).
+  // We funnel those through React Query's setQueryData so the cache stays
+  // the single source of truth and other consumers re-render correctly.
+  const setVehicles: React.Dispatch<React.SetStateAction<any[]>> = (updater) => {
+    queryClient.setQueryData<any[]>(['vehicles'], (prev) =>
+      typeof updater === 'function' ? (updater as (p: any[] | undefined) => any[])(prev ?? []) : updater
+    );
+  };
+  const setDrivers: React.Dispatch<React.SetStateAction<any[]>> = (updater) => {
+    queryClient.setQueryData<any[]>(['drivers'], (prev) =>
+      typeof updater === 'function' ? (updater as (p: any[] | undefined) => any[])(prev ?? []) : updater
+    );
+  };
+  const setTrips: React.Dispatch<React.SetStateAction<any[]>> = (updater) => {
+    queryClient.setQueryData<any[]>(['trips'], (prev) =>
+      typeof updater === 'function' ? (updater as (p: any[] | undefined) => any[])(prev ?? []) : updater
+    );
+  };
+
+  const [maintenance, setMaintenance] = useState<any[]>([]);
+  const [fuelLogs, setFuelLogs] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
+
+  // Seed current user from JWT stored by authService
+  const loggedInUser = authService.getUser();
+  const [currentUser, setCurrentUser] = useState({
+    name: loggedInUser?.name ?? "User",
+    roleName: loggedInUser?.role ?? "DISPATCHER",
+    email: loggedInUser?.email ?? "",
+    phone: "",
+    dept: "Fleet Operations",
+  });
 
   useEffect(() => {
     const roleLabels: Record<string, string> = {
@@ -231,19 +204,36 @@ function FleetProvider({ children, role, setRole }: { children: React.ReactNode,
       dispatcher: "Dispatcher",
       viewer: "Viewer",
     };
-    setCurrentUser(u => ({ ...u, roleName: roleLabels[role] ?? "Fleet Admin" }));
+    setCurrentUser(u => ({ ...u, roleName: (roleLabels[role] ?? "ADMIN") as "ADMIN" | "MANAGER" | "DISPATCHER" }));
   }, [role]);
 
   return (
-    <FleetContext.Provider value={{
-      vehicles, setVehicles,
-      drivers, setDrivers,
-      trips, setTrips,
-      maintenance, setMaintenance,
-      fuelLogs, setFuelLogs,
-      expenses, setExpenses,
-      role, setRole,
-      currentUser, setCurrentUser
+<FleetContext.Provider value={{
+      vehicles,
+      setVehicles,
+      createVehicle,
+      updateVehicle,
+      deleteVehicle,
+      drivers,
+      setDrivers,
+      createDriver,
+      updateDriver,
+      deleteDriver,
+      trips,
+      setTrips,
+      createTrip,
+      updateTrip,
+      deleteTrip,
+      maintenance,
+      setMaintenance,
+      fuelLogs,
+      setFuelLogs,
+      expenses,
+      setExpenses,
+      role,
+      setRole,
+      currentUser,
+      setCurrentUser,
     }}>
       {children}
     </FleetContext.Provider>
@@ -377,18 +367,17 @@ function Avatar({ name, size = "sm" }: { name: string; size?: "sm" | "md" | "lg"
 // ─── NAVIGATION CONFIG ───────────────────────────────────────────────────────
 
 const navItems = [
-  { id: "dashboard" as Screen, label: "Dashboard", Icon: LayoutDashboard },
-  { id: "vehicles" as Screen, label: "Vehicles", Icon: Truck },
-  { id: "drivers" as Screen, label: "Drivers", Icon: Users },
-  { id: "dispatch" as Screen, label: "Trip Dispatch", Icon: Navigation },
-  { id: "maintenance" as Screen, label: "Maintenance", Icon: Wrench },
-  { id: "fuel" as Screen, label: "Fuel & Expenses", Icon: Fuel },
-  { id: "reports" as Screen, label: "Reports", Icon: BarChart3 },
-  { id: "settings" as Screen, label: "Settings", Icon: Settings },
+  { id: "dashboard" as Screen, label: "Dashboard", Icon: LayoutDashboard, path: "/dashboard" },
+  { id: "vehicles" as Screen,  label: "Vehicles",   Icon: Truck,           path: "/vehicles" },
+  { id: "drivers" as Screen,   label: "Drivers",    Icon: Users,           path: "/drivers" },
+  { id: "dispatch" as Screen,  label: "Trip Dispatch", Icon: Navigation,   path: "/dispatch" },
+  { id: "maintenance" as Screen, label: "Maintenance", Icon: Wrench,       path: "/maintenance" },
+  { id: "fuel" as Screen,      label: "Fuel & Expenses", Icon: Fuel,       path: "/fuel" },
+  { id: "reports" as Screen,   label: "Reports",    Icon: BarChart3,       path: "/reports" },
+  { id: "settings" as Screen,  label: "Settings",   Icon: Settings,        path: "/settings" },
 ];
 
 const pageMeta: Record<Screen, { title: string; sub: string }> = {
-  auth:        { title: "", sub: "" },
   dashboard:   { title: "Dashboard", sub: "Overview of your fleet operations" },
   vehicles:    { title: "Vehicle Registry", sub: "Manage and track your fleet inventory" },
   drivers:     { title: "Driver Management", sub: "Monitor driver performance and compliance" },
@@ -401,8 +390,8 @@ const pageMeta: Record<Screen, { title: string; sub: string }> = {
 
 // ─── SIDEBAR ─────────────────────────────────────────────────────────────────
 
-function Sidebar({ current, onNav, collapsed, onToggle }: {
-  current: Screen; onNav: (s: Screen) => void; collapsed: boolean; onToggle: () => void;
+function Sidebar({ collapsed, onToggle }: {
+  collapsed: boolean; onToggle: () => void;
 }) {
   const { currentUser, role } = useFleet();
   const { user, logout } = useAuth();
@@ -440,18 +429,18 @@ function Sidebar({ current, onNav, collapsed, onToggle }: {
 
       {/* Nav */}
       <nav className="flex-1 py-3 overflow-y-auto px-2 space-y-0.5">
-        {allowedItems.map(({ id, label, Icon }) => {
-          const active = current === id;
+        {allowedItems.map(({ id, label, Icon, path }) => {
+          const active = location.pathname === path;
           return (
-            <button key={id} onClick={() => onNav(id)} title={collapsed ? label : undefined}
+            <Link key={id} to={path} title={collapsed ? label : undefined}
               className={cn(
-                "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150",
+                "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 no-underline",
                 collapsed && "justify-center px-2",
                 active ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
               )}>
               <Icon size={15} className="shrink-0" />
               {!collapsed && <span className="truncate">{label}</span>}
-            </button>
+            </Link>
           );
         })}
       </nav>
@@ -528,12 +517,27 @@ function TD({ children, className, colSpan }: { children?: React.ReactNode; clas
 
 // ─── AUTH SCREEN ─────────────────────────────────────────────────────────────
 
-function AuthScreen({ onLogin }: { onLogin: () => void }) {
-  const { setRole } = useFleet();
-  const [email, setEmail] = useState("admin@transitops.com");
-  const [password, setPassword] = useState("Password1234");
-  const [remember, setRemember] = useState(true);
-  const [demoRole, setDemoRole] = useState<"admin" | "manager" | "dispatcher">("admin");
+function AuthScreen() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      await authService.login(email, password);
+      navigate("/dashboard");
+    } catch (err: any) {
+      setError(err?.message ?? "Login failed. Please check your credentials.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="flex h-screen bg-white font-[Inter,sans-serif]">
@@ -670,26 +674,19 @@ function AuthScreen({ onLogin }: { onLogin: () => void }) {
               <p className="text-[13px] text-slate-500 mt-1">Sign in to your TransitOps account</p>
             </div>
 
-            {/* Demo role */}
-            <div className="mb-5 p-3 bg-blue-50 rounded-xl border border-blue-100">
-              <p className="text-[10px] font-semibold text-blue-500 mb-2 uppercase tracking-wider">Demo Access</p>
-              <div className="flex gap-1.5">
-                {(["admin", "manager", "dispatcher"] as const).map(r => (
-                  <button key={r} onClick={() => setDemoRole(r)}
-                    className={cn("flex-1 py-1.5 rounded-lg text-[11px] font-semibold capitalize transition-all",
-                      demoRole === r ? "bg-blue-600 text-white shadow-sm" : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200")}>
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
 
-            <div className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-4">
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-[13px] text-red-600 flex items-center gap-2">
+                  <AlertTriangle size={13} />
+                  {error}
+                </div>
+              )}
               <Field label="Email address">
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className={ic} placeholder="you@company.com" />
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className={ic} placeholder="you@company.com" required />
               </Field>
               <Field label="Password">
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} className={ic} placeholder="Enter your password" />
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} className={ic} placeholder="Enter your password" required />
               </Field>
               <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -697,13 +694,116 @@ function AuthScreen({ onLogin }: { onLogin: () => void }) {
                     className="size-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
                   <span className="text-[13px] text-slate-600">Remember me</span>
                 </label>
-                <button className="text-[13px] text-blue-600 hover:text-blue-700 font-medium transition-colors">Forgot password?</button>
               </div>
-              <button onClick={() => { setRole(demoRole); onLogin(); }}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold text-[14px] transition-all shadow-sm shadow-blue-600/25 hover:shadow-md hover:shadow-blue-600/25 active:scale-[0.99]">
-                Sign In to TransitOps
+              <button type="submit" disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white py-2.5 rounded-xl font-semibold text-[14px] transition-all shadow-sm shadow-blue-600/25 hover:shadow-md hover:shadow-blue-600/25 active:scale-[0.99]">
+                {loading ? "Signing in…" : "Sign In to TransitOps"}
               </button>
+              <p className="text-center text-[13px] text-slate-500">
+                Don't have an account?{" "}
+                <Link to="/register" className="text-blue-600 hover:text-blue-700 font-medium">Create one</Link>
+              </p>
+            </form>
+          </div>
+          <p className="text-center text-[11px] text-slate-400 mt-5">SOC 2 Type II certified · Enterprise-grade security</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── REGISTER SCREEN ─────────────────────────────────────────────────────────
+
+function RegisterScreen() {
+  const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [role, setRoleField] = useState<"ADMIN" | "MANAGER" | "DISPATCHER">("DISPATCHER");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleRegister(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    if (password !== confirm) { setError("Passwords do not match."); return; }
+    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    setLoading(true);
+    try {
+      await authService.register(name, email, password, role);
+      navigate("/dashboard");
+    } catch (err: any) {
+      setError(err?.message ?? "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="flex h-screen bg-white font-[Inter,sans-serif]">
+      {/* Left branding panel (same as login) */}
+      <div className="hidden lg:flex w-[42%] flex-col relative overflow-hidden bg-slate-900">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900" />
+        <div className="relative z-10 flex flex-col h-full p-10 justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="size-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
+              <Truck size={17} className="text-white" />
             </div>
+            <span className="text-[15px] font-bold text-white tracking-tight">TransitOps</span>
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold text-white leading-tight">Join the fleet<br />management revolution.</h2>
+            <p className="text-[13px] text-blue-300 mt-3 max-w-xs leading-relaxed">Create your account to start managing vehicles, drivers, and trips in one powerful platform.</p>
+          </div>
+          <p className="text-[11px] text-slate-500">Trusted by 500+ enterprise fleets worldwide.</p>
+        </div>
+      </div>
+
+      {/* Right form */}
+      <div className="flex-1 flex items-center justify-center bg-slate-50 px-8">
+        <div className="w-full max-w-[360px]">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/60 p-8">
+            <div className="mb-7">
+              <h2 className="text-[22px] font-bold text-slate-900">Create your account</h2>
+              <p className="text-[13px] text-slate-500 mt-1">Sign up for TransitOps</p>
+            </div>
+
+            <form onSubmit={handleRegister} className="space-y-4">
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-[13px] text-red-600 flex items-center gap-2">
+                  <AlertTriangle size={13} />
+                  {error}
+                </div>
+              )}
+              <Field label="Full name">
+                <input type="text" value={name} onChange={e => setName(e.target.value)} className={ic} placeholder="Jane Smith" required />
+              </Field>
+              <Field label="Email address">
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className={ic} placeholder="you@company.com" required />
+              </Field>
+              <Field label="Password">
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} className={ic} placeholder="Min. 6 characters" required />
+              </Field>
+              <Field label="Confirm password">
+                <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} className={ic} placeholder="Re-enter password" required />
+              </Field>
+              <Field label="Role">
+                <select value={role} onChange={e => setRoleField(e.target.value as any)} className={ic}>
+                  <option value="DISPATCHER">Dispatcher</option>
+                  <option value="MANAGER">Fleet Manager</option>
+                  <option value="ADMIN">Administrator</option>
+                </select>
+              </Field>
+              <button type="submit" disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white py-2.5 rounded-xl font-semibold text-[14px] transition-all shadow-sm shadow-blue-600/25 active:scale-[0.99]">
+                {loading ? "Creating account…" : "Create Account"}
+              </button>
+              <p className="text-center text-[13px] text-slate-500">
+                Already have an account?{" "}
+                <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">Sign in</Link>
+              </p>
+            </form>
           </div>
           <p className="text-center text-[11px] text-slate-400 mt-5">SOC 2 Type II certified · Enterprise-grade security</p>
         </div>
@@ -714,7 +814,13 @@ function AuthScreen({ onLogin }: { onLogin: () => void }) {
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
+
+
 function DashboardScreen() {
+  // Pull the canonical (already-normalized) collections from FleetProvider.
+  // Calling useVehicles/useDrivers/useTrips here as well would create a second
+  // query instance per cache key and would re-introduce the risk of
+  // non-array responses reaching the .filter() calls below.
   const { vehicles, drivers, trips, maintenance, fuelLogs, expenses } = useFleet();
 
   const parseVal = (v: any) => {
@@ -2987,24 +3093,29 @@ function AccessDenied() {
 export default function DashboardApp() {
   const [screen, setScreen] = useState<Screen>("dashboard");
   const [collapsed, setCollapsed] = useState(false);
-  const [role, setRole] = useState<"admin" | "manager" | "dispatcher" | "viewer">("admin");
-
+  const { user } = useAuth();
+  
+  // Normalise user role for internal context
+  const roleRaw = user?.role ?? "driver";
+  const roleNormalized: "admin" | "manager" | "dispatcher" | "viewer" =
+    roleRaw === "fleet_manager" ? "manager" : "dispatcher";
+  const [role, setRole] = useState<"admin" | "manager" | "dispatcher" | "viewer">(roleNormalized);
   return (
     <FleetProvider role={role} setRole={setRole}>
-      <AppContent screen={screen} setScreen={setScreen} collapsed={collapsed} setCollapsed={setCollapsed} />
+      <AppContent screen={screen} collapsed={collapsed} setCollapsed={setCollapsed} />
     </FleetProvider>
   );
 }
 
-function AppContent({ screen, setScreen, collapsed, setCollapsed }: {
-  screen: Screen; setScreen: (s: Screen) => void; collapsed: boolean; setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+function AppContent({ screen, collapsed, setCollapsed }: {
+  screen: Screen; collapsed: boolean; setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const { user } = useAuth();
   const role = user?.role;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 font-[Inter,sans-serif]">
-      <Sidebar current={screen} onNav={setScreen} collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
+      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <TopNav screen={screen} />
         <main className="flex-1 overflow-auto p-5 lg:p-6">

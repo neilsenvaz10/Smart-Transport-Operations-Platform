@@ -16,14 +16,22 @@ import reportsRoutes from './modules/reports/reports.routes';
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '5000', 10);
-const CORS_ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
+const CORS_ORIGIN_RAW = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
+const CORS_ORIGINS = CORS_ORIGIN_RAW.split(',').map(o => o.trim());
 const NODE_ENV = process.env.NODE_ENV ?? 'development';
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(helmet());
 app.use(
   cors({
-    origin: CORS_ORIGIN,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. curl, Postman, server-side)
+      if (!origin || CORS_ORIGINS.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: Origin '${origin}' not allowed`));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -90,7 +98,7 @@ if (NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`\n🚌 TransitOps API running on http://localhost:${PORT}`);
     console.log(`   Environment : ${NODE_ENV}`);
-    console.log(`   CORS origin : ${CORS_ORIGIN}`);
+    console.log(`   CORS origin : ${CORS_ORIGIN_RAW}`);
     console.log(`   Health check: http://localhost:${PORT}/health\n`);
   });
 }
