@@ -241,6 +241,76 @@
   border-color: #334155 !important;
 }
 
+/* ── Sidebar Redesign ────────────────────────────────── */
+.dark aside {
+  background-color: #0B1220 !important;
+  border-right-color: rgba(255,255,255,0.05) !important;
+}
+
+.dark aside .border-b,
+.dark aside .border-t {
+  border-color: rgba(255,255,255,0.05) !important;
+}
+
+/* Logo container */
+.dark aside .bg-blue-600.size-8 {
+  background-color: rgba(59,130,246,0.08) !important;
+  box-shadow: 0 0 20px rgba(59,130,246,0.08) !important;
+}
+.dark aside .bg-blue-600.size-8 svg {
+  color: #60A5FA !important;
+}
+
+/* Sidebar texts */
+.dark aside .text-white {
+  color: #E2E8F0 !important;
+}
+.dark aside .text-slate-500 {
+  color: #94A3B8 !important;
+}
+.dark aside .text-slate-400 {
+  color: #8A97AD !important;
+}
+
+/* Nav items - base */
+.dark aside nav button {
+  transition: all 180ms ease !important;
+  border-radius: 12px !important;
+  border: 1px solid transparent;
+}
+
+/* Nav items - active state */
+.dark aside nav button.bg-blue-600 {
+  background-color: rgba(37, 99, 235, 0.14) !important;
+  border: 1px solid rgba(59,130,246,0.18) !important;
+  box-shadow: none !important;
+  color: #F8FAFC !important;
+}
+.dark aside nav button.bg-blue-600 svg {
+  color: #60A5FA !important;
+}
+
+/* Nav items - hover state (inactive) */
+.dark aside nav button:not(.bg-blue-600):hover {
+  background-color: rgba(255,255,255,0.04) !important;
+  transform: translateX(2px) !important;
+  color: #E2E8F0 !important;
+}
+.dark aside nav button:not(.bg-blue-600):hover svg {
+  color: #E2E8F0 !important;
+}
+
+/* Profile section */
+.dark aside > div:last-child > div.flex {
+  background-color: rgba(255,255,255,0.025) !important;
+  border: 1px solid rgba(255,255,255,0.05) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+.dark aside > div:last-child {
+  border-top-color: transparent !important;
+}
+
 /* ── Elevated surfaces / hover states ────────────────── */
 .dark .bg-slate-100 {
   background-color: #273548 !important;
