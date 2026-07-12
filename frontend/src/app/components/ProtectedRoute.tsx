@@ -24,6 +24,10 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  if (user.isFirstLogin && location.pathname !== '/change-password') {
+    return <Navigate to="/change-password" replace />;
+  }
+
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">

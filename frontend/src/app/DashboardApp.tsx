@@ -22,6 +22,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import { useAuth } from "../lib/auth";
+import UsersScreen from "./pages/UsersScreen";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
 
@@ -91,7 +92,7 @@ function cn(...c: (string | false | undefined | null)[]): string {
 
 import { createContext, useContext, useEffect } from "react";
 
-type Screen = "dashboard" | "vehicles" | "drivers" | "dispatch" | "maintenance" | "fuel" | "reports" | "settings";
+type Screen = "dashboard" | "vehicles" | "drivers" | "dispatch" | "maintenance" | "fuel" | "reports" | "settings" | "users";
 
 const TODAY = new Date("2025-01-15");
 
@@ -445,6 +446,7 @@ const navItems = [
   { id: "maintenance" as Screen, label: "Maintenance", Icon: Wrench,       path: "/maintenance" },
   { id: "fuel" as Screen,      label: "Fuel & Expenses", Icon: Fuel,       path: "/fuel" },
   { id: "reports" as Screen,   label: "Reports",    Icon: BarChart3,       path: "/reports" },
+  { id: "users" as Screen,     label: "Users",      Icon: Users,           path: "/users" },
   { id: "settings" as Screen,  label: "Settings",   Icon: Settings,        path: "/settings" },
 ];
 
@@ -456,6 +458,7 @@ const pageMeta: Record<Screen, { title: string; sub: string }> = {
   maintenance: { title: "Maintenance", sub: "Track vehicle service and repairs" },
   fuel:        { title: "Fuel & Expenses", sub: "Monitor fuel consumption and operational costs" },
   reports:     { title: "Reports & Analytics", sub: "Performance insights and operational analytics" },
+  users:       { title: "User Management", sub: "Invite and manage system users" },
   settings:    { title: "Settings & RBAC", sub: "Configure system settings and access control" },
 };
 
@@ -468,6 +471,7 @@ function Sidebar({ screen, setScreen, collapsed, onToggle }: {
 
   const allowedItems = navItems.filter(item => {
     if (item.id === "reports" && role === "dispatcher") return false;
+    if (item.id === "users" && user?.role !== "fleet_manager") return false;
     if (item.id === "settings" && role !== "admin") return false;
     return true;
   });
@@ -2961,6 +2965,7 @@ function AppContent({ screen, setScreen, collapsed, setCollapsed }: {
           {screen === "maintenance" && <MaintenanceScreen />}
           {screen === "fuel"        && <FuelScreen />}
           {screen === "reports"     && (role === "driver" || role === "safety_officer" ? <AccessDenied /> : <ReportsScreen />)}
+          {screen === "users"       && (user?.role !== "fleet_manager" ? <AccessDenied /> : <UsersScreen />)}
           {screen === "settings"    && (role !== "fleet_manager" ? <AccessDenied /> : <SettingsScreen />)}
         </main>
       </div>

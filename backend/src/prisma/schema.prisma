@@ -14,6 +14,13 @@ enum Role {
   financial_analyst
 }
 
+enum UserStatus {
+  active
+  inactive
+  suspended
+  pending_invite
+}
+
 enum VehicleStatus {
   available
   on_trip
@@ -45,8 +52,11 @@ model User {
   email           String            @unique
   passwordHash    String
   name            String
+  phone           String?
   role            Role
-  isActive        Boolean           @default(true)
+  status          UserStatus        @default(active)
+  lastLogin       DateTime?
+  isFirstLogin    Boolean           @default(true)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   drivers         Driver[]          @relation("UserDriver")

@@ -24,13 +24,15 @@ export class AuthService {
         passwordHash,
         name: input.name,
         role: input.role,
+        status: 'active',
+        isFirstLogin: false,
       },
       select: {
         id: true,
         email: true,
         name: true,
         role: true,
-        isActive: true,
+        status: true,
         createdAt: true,
       },
     })
@@ -49,8 +51,12 @@ export class AuthService {
       where: { email: input.email },
     })
 
-    if (!user || !user.isActive) {
+    if (!user) {
       throw new AppError('Invalid email or password', 401)
+    }
+
+    if (user.status === 'suspended' || user.status === 'inactive') {
+      throw new AppError('Your account is not active. Please contact your Fleet Manager.', 403)
     }
 
     const isPasswordValid = await bcrypt.compare(input.password, user.passwordHash)
@@ -58,8 +64,13 @@ export class AuthService {
       throw new AppError('Invalid email or password', 401)
     }
 
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() }
+    })
+
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, name: user.name },
+      { id: user.id, email: user.email, role: user.role, name: user.name, isFirstLogin: user.isFirstLogin },
       JWT_SECRET,
       { expiresIn: '1d' },
     )
@@ -70,7 +81,8 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
-        isActive: user.isActive,
+        status: user.status,
+        isFirstLogin: user.isFirstLogin,
       },
       token,
     }
@@ -84,11 +96,12 @@ export class AuthService {
         email: true,
         name: true,
         role: true,
-        isActive: true,
+        status: true,
+        isFirstLogin: true,
       },
     });
 
-    if (!user || !user.isActive) {
+    if (!user || user.status === 'suspended' || user.status === 'inactive') {
       throw new AppError('User not found or inactive', 401);
     }
     return user;

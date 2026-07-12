@@ -9,7 +9,8 @@ export interface User {
   email: string;
   name: string;
   role: Role;
-  isActive: boolean;
+  status: 'active' | 'inactive' | 'suspended' | 'pending_invite';
+  isFirstLogin: boolean;
 }
 
 interface AuthState {

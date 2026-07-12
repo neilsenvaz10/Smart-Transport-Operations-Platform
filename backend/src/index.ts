@@ -13,6 +13,7 @@ import maintenanceRoutes from './modules/maintenance/maintenance.routes';
 import fuelRoutes from './modules/fuel/fuel.routes';
 import expenseRoutes from './modules/expenses/expense.routes';
 import reportsRoutes from './modules/reports/reports.routes';
+import userRoutes from './modules/users/user.routes';
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '5000', 10);
@@ -50,6 +51,7 @@ app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/fuel', fuelRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/users', userRoutes);
 
 /**
  * GET /health and /api/health

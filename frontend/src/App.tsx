@@ -3,6 +3,7 @@ import { RouterProvider, createBrowserRouter, Link, Outlet, Navigate } from 'rea
 import DashboardApp from './app/DashboardApp'
 import Login from './app/pages/Login'
 import ProtectedRoute from './app/components/ProtectedRoute'
+import ChangePassword from './app/pages/ChangePassword'
 import { AuthProvider } from './lib/auth'
 import './index.css'
 
@@ -58,6 +59,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <DashboardApp />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: '/change-password',
+        element: (
+          <ProtectedRoute>
+            <ChangePassword />
           </ProtectedRoute>
         )
       },
