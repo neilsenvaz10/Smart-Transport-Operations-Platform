@@ -47,6 +47,15 @@ enum MaintenanceStatus {
   closed
 }
 
+enum DocumentType {
+  REGISTRATION
+  INSURANCE
+  POLLUTION
+  PERMIT
+  INSPECTION
+  OTHER
+}
+
 model User {
   id              String            @id @default(uuid())
   email           String            @unique
@@ -82,6 +91,7 @@ model Vehicle {
   maintenances       MaintenanceLog[]
   expenses           Expense[]
   fuelLogs           FuelLog[]
+  documents          VehicleDocument[]
 }
 
 model Driver {
@@ -170,4 +180,17 @@ model Expense {
   createdBy   User?    @relation("UserExpenses", fields: [createdById], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model VehicleDocument {
+  id          String       @id @default(uuid())
+  vehicleId   String
+  vehicle     Vehicle      @relation(fields: [vehicleId], references: [id])
+  type        DocumentType
+  fileName    String
+  fileUrl     String
+  issueDate   DateTime?
+  expiryDate  DateTime?
+  uploadedBy  String
+  createdAt   DateTime     @default(now())
 }

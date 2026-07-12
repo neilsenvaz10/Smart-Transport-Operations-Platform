@@ -13,7 +13,7 @@ import {
   Search, Bell, ChevronDown, ChevronLeft, ChevronRight, Plus, Download,
   Eye, Edit2, Trash2, CheckCircle, Clock, AlertTriangle, Calendar,
   TrendingUp, TrendingDown, Activity, LogOut, ArrowRight, DollarSign,
-  Navigation, X, RefreshCw, Zap, Shield, MapPin, Sun, Moon,
+  Navigation, X, RefreshCw, Zap, Shield, MapPin,
   Droplet, Receipt
 } from "lucide-react";
 
@@ -485,17 +485,17 @@ function Sidebar({ screen, setScreen, collapsed, onToggle }: {
 
   return (
     <aside className={cn(
-      "flex flex-col h-full bg-slate-900 transition-all duration-300 shrink-0",
+      "flex flex-col h-full bg-white border-r border-slate-200 transition-all duration-300 shrink-0",
       collapsed ? "w-[60px]" : "w-[220px]"
     )}>
       {/* Logo */}
-      <div className={cn("flex items-center gap-3 border-b border-slate-800 shrink-0", collapsed ? "px-3 py-[18px] justify-center" : "px-4 py-[18px]")}>
-        <div className="size-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/30">
-          <Truck size={15} className="text-white" />
+      <div className={cn("flex items-center gap-3 border-b border-slate-100 shrink-0", collapsed ? "px-3 py-[18px] justify-center" : "px-4 py-[18px]")}>
+        <div className="size-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0 shadow-sm border border-blue-100">
+          <Truck size={15} className="text-blue-600" />
         </div>
         {!collapsed && (
           <div className="min-w-0">
-            <p className="text-[13px] font-bold text-white tracking-tight leading-none">TransitOps</p>
+            <p className="text-[13px] font-bold text-slate-900 tracking-tight leading-none">TransitOps</p>
             <p className="text-[10px] text-slate-500 mt-0.5">Fleet Platform</p>
           </div>
         )}
@@ -508,7 +508,7 @@ function Sidebar({ screen, setScreen, collapsed, onToggle }: {
           return (
             <button key={id} onClick={() => setScreen(id)} title={collapsed ? label : undefined}
               className={cn(
-                "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 no-underline",
+                "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150 no-underline",
                 collapsed && "justify-center px-2",
                 active ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
               )}>
@@ -520,24 +520,24 @@ function Sidebar({ screen, setScreen, collapsed, onToggle }: {
       </nav>
 
       {/* Bottom */}
-      <div className="border-t border-slate-800 p-2 space-y-1 shrink-0">
+      <div className="border-t border-slate-100 p-3 space-y-1 shrink-0 bg-white">
         {!collapsed && (
-          <div className="flex items-center gap-2.5 px-2 py-2">
+          <div className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-[14px] shadow-sm mb-2">
             <Avatar name={user?.name || currentUser.name} />
             <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-semibold text-slate-200 truncate leading-none">{user?.name || currentUser.name}</p>
-              <p className="text-[10px] text-slate-500 mt-0.5">{user ? formatRole(user.role) : currentUser.roleName}</p>
+              <p className="text-[13px] font-semibold text-slate-900 truncate leading-none">{user?.name || currentUser.name}</p>
+              <p className="text-[11px] text-slate-400 mt-1">{user ? formatRole(user.role) : currentUser.roleName}</p>
             </div>
-            <button onClick={() => setShowLogoutModal(true)} className="p-1 hover:bg-slate-800 rounded transition-colors" title="Log out">
-              <LogOut size={12} className="text-slate-500" />
+            <button onClick={() => setShowLogoutModal(true)} className="p-1.5 hover:bg-slate-50 rounded-md transition-colors" title="Log out">
+              <LogOut size={14} className="text-slate-400 hover:text-slate-700" />
             </button>
           </div>
         )}
         <button onClick={onToggle}
-          className={cn("w-full flex items-center justify-center py-2 hover:bg-slate-800 rounded-lg transition-colors", collapsed && "py-2.5")}>
+          className={cn("w-full flex items-center justify-center py-2 hover:bg-slate-50 rounded-lg transition-colors border border-transparent hover:border-slate-100", collapsed && "py-2.5")}>
           {collapsed
-            ? <ChevronRight size={13} className="text-slate-500" />
-            : <ChevronLeft size={13} className="text-slate-500" />}
+            ? <ChevronRight size={13} className="text-slate-400" />
+            : <ChevronLeft size={13} className="text-slate-400" />}
         </button>
       </div>
 
@@ -567,32 +567,29 @@ function Sidebar({ screen, setScreen, collapsed, onToggle }: {
 
 function TopNav({ screen }: { screen: Screen }) {
   const { title, sub } = pageMeta[screen];
-  const { currentUser, theme, toggleTheme } = useFleet();
+  const { currentUser } = useFleet();
   const { user } = useAuth();
 
   const displayName = user?.name || currentUser.name;
 
   return (
-    <header className="h-[60px] bg-white border-b border-slate-100 flex items-center px-6 gap-4 shrink-0">
+    <header className="h-[64px] bg-white border-b border-slate-200 flex items-center px-6 gap-6 shrink-0 shadow-sm z-10">
       <div className="flex-1 min-w-0">
-        <h1 className="text-[14px] font-semibold text-slate-900 leading-none">{title}</h1>
-        <p className="text-[11px] text-slate-400 mt-0.5">{sub}</p>
+        <h1 className="text-[16px] font-bold text-slate-900 leading-none">{title}</h1>
+        <p className="text-[12px] text-slate-500 mt-1 font-medium">{sub}</p>
       </div>
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-4">
         <HealthBadge />
         <div className="relative hidden md:block">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input type="text" placeholder="Search anything…"
-            className="pl-8 pr-4 py-2 text-[13px] border border-slate-200 rounded-lg bg-slate-50 w-52 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all" />
+            className="pl-9 pr-4 py-2 bg-[#F8FAFC] border border-[#E5E7EB] rounded-lg text-[13px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all w-[240px]" />
         </div>
-        <button onClick={toggleTheme} className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}>
-          {theme === "dark" ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-slate-500" />}
+        <button className="relative p-2 hover:bg-slate-50 rounded-full transition-colors">
+          <Bell size={16} className="text-slate-500 hover:text-slate-900" />
+          <span className="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full border-2 border-white" />
         </button>
-        <button className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors">
-          <Bell size={15} className="text-slate-500" />
-          <span className="absolute top-1.5 right-1.5 size-1.5 bg-red-500 rounded-full" />
-        </button>
-        <button className="flex items-center gap-2 pl-2.5 pr-2 py-1.5 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">
+        <button className="flex items-center gap-2 pl-2.5 pr-2 py-1.5 hover:bg-slate-50 rounded-lg transition-colors border border-transparent hover:border-slate-200">
           <Avatar name={displayName} />
           <span className="text-[13px] font-medium text-slate-700 hidden md:block">{displayName}</span>
           <ChevronDown size={11} className="text-slate-400" />
@@ -2494,9 +2491,7 @@ function FuelScreen() {
 const tooltipStyle = { fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" };
 
 function ReportsScreen() {
-  const { trips, vehicles, drivers, fuelLogs, expenses, maintenance, currentUser } = useFleet();
-  const { user } = useAuth();
-  const displayName = user?.name || currentUser?.name || "User";
+  const { trips, vehicles, drivers, fuelLogs, expenses, maintenance } = useFleet();
   const { kpis, exportCSV, isExporting } = useReports();
 
   const parseVal = (v: any) => {
@@ -2568,87 +2563,28 @@ function ReportsScreen() {
     return d;
   });
 
-  const handleExportPDF = () => {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-
-    const html = `
-      <html>
-        <head>
-          <title>TransitOps Reports - ${new Date().toLocaleDateString()}</title>
-          <style>
-            body { font-family: system-ui, sans-serif; color: #0f172a; padding: 2rem; background-color: #ffffff; }
-            h1 { font-size: 20px; font-weight: bold; border-bottom: 2px solid #2563eb; padding-bottom: 0.5rem; margin-bottom: 1.5rem; color: #1e3a8a; }
-            .meta { font-size: 12px; color: #64748b; margin-bottom: 2rem; }
-            .kpis { display: grid; grid-template-cols: repeat(4, 1fr); gap: 1rem; margin-bottom: 2.5rem; }
-            .kpi { border: 1px solid #e2e8f0; padding: 1rem; border-radius: 12px; background-color: #f8fafc; }
-            .kpi-title { font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.05em; }
-            .kpi-value { font-size: 20px; font-weight: 800; margin-top: 0.25rem; color: #0f172a; }
-            h3 { font-size: 14px; font-weight: 700; color: #1e293b; margin-top: 2rem; margin-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.25rem; }
-            table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; margin-bottom: 2rem; }
-            th, td { border-bottom: 1px solid #e2e8f0; padding: 0.75rem; text-align: left; font-size: 12px; }
-            th { background-color: #f8fafc; font-weight: 600; color: #475569; }
-            td { color: #334155; }
-            .footer { text-align: center; color: #94a3b8; font-size: 10px; margin-top: 4rem; border-top: 1px dashed #e2e8f0; padding-top: 1rem; }
-          </style>
-        </head>
-        <body>
-          <h1>TransitOps Fleet Reports Summary</h1>
-          <div class="meta">Generated by ${displayName} on ${new Date().toLocaleString()}</div>
-          
-          <div class="kpis">
-            <div class="kpi">
-              <div class="kpi-title">Total Trips</div>
-              <div class="kpi-value">${totalTripsCount}</div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-title">Total Distance</div>
-              <div class="kpi-value">${totalDistance.toLocaleString()} mi</div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-title">Avg Cost / Trip</div>
-              <div class="kpi-value">$${avgCostPerTrip}</div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-title">Avg Safety Score</div>
-              <div class="kpi-value">${avgSafetyScore}/100</div>
-            </div>
-          </div>
-
-          <h3>Vehicle ROI Breakdown (Top 5 Vehicles)</h3>
-          <table>
-            <thead>
-              <tr><th>Vehicle Registration Plate</th><th>ROI Percentage</th></tr>
-            </thead>
-            <tbody>
-              ${dynamicRoiChartData.map(r => `<tr><td><strong>${r.vehicle}</strong></td><td>${r.roi}%</td></tr>`).join("")}
-            </tbody>
-          </table>
-
-          <h3>Monthly Operational Costs Breakdown</h3>
-          <table>
-            <thead>
-              <tr><th>Month</th><th>Fuel Expenses</th><th>Maintenance Expenses</th><th>Tolls & Other</th></tr>
-            </thead>
-            <tbody>
-              ${dynamicOpCostChartData.map(d => `<tr><td><strong>${d.month}</strong></td><td>$${d.fuel.toFixed(2)}</td><td>$${d.maintenance.toFixed(2)}</td><td>$${d.tolls.toFixed(2)}</td></tr>`).join("")}
-            </tbody>
-          </table>
-
-          <div class="footer">TransitOps Fleet Management Platform &copy; ${new Date().getFullYear()}</div>
-
-          <script>
-            window.onload = function() {
-              window.print();
-              setTimeout(() => { window.close(); }, 500);
-            }
-          </script>
-        </body>
-      </html>
-    `;
-    printWindow.document.write(html);
-    printWindow.document.close();
+  const handleExportPDF = async () => {
+    try {
+      const token = localStorage.getItem("transitops_token");
+      const res = await fetch("/api/reports/export/pdf", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to export PDF");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `transitops_fleet_report_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to export PDF. Please try again.");
+    }
   };
+
 
   return (
     <div className="space-y-5">
@@ -2953,20 +2889,22 @@ function AppContent({ screen, setScreen, collapsed, setCollapsed }: {
   const role = user?.role;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 font-[Inter,sans-serif]">
+    <div className="flex h-screen overflow-hidden bg-[#F7F9FC] font-[Inter,sans-serif] text-slate-900">
       <Sidebar screen={screen} setScreen={setScreen} collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <TopNav screen={screen} />
-        <main className="flex-1 overflow-auto p-5 lg:p-6">
-          {screen === "dashboard"   && <DashboardScreen />}
-          {screen === "vehicles"    && <VehiclesScreen />}
-          {screen === "drivers"     && <DriversScreen />}
-          {screen === "dispatch"    && <DispatchScreen />}
-          {screen === "maintenance" && <MaintenanceScreen />}
-          {screen === "fuel"        && <FuelScreen />}
-          {screen === "reports"     && (role === "driver" || role === "safety_officer" ? <AccessDenied /> : <ReportsScreen />)}
-          {screen === "users"       && (user?.role !== "fleet_manager" ? <AccessDenied /> : <UsersScreen />)}
-          {screen === "settings"    && (role !== "fleet_manager" ? <AccessDenied /> : <SettingsScreen />)}
+        <main className="flex-1 overflow-auto p-6 lg:p-8">
+          <div className="max-w-[1400px] mx-auto space-y-6">
+            {screen === "dashboard"   && <DashboardScreen />}
+            {screen === "vehicles"    && <VehiclesScreen />}
+            {screen === "drivers"     && <DriversScreen />}
+            {screen === "dispatch"    && <DispatchScreen />}
+            {screen === "maintenance" && <MaintenanceScreen />}
+            {screen === "fuel"        && <FuelScreen />}
+            {screen === "reports"     && (role === "driver" || role === "safety_officer" ? <AccessDenied /> : <ReportsScreen />)}
+            {screen === "users"       && (user?.role !== "fleet_manager" ? <AccessDenied /> : <UsersScreen />)}
+            {screen === "settings"    && (role !== "fleet_manager" ? <AccessDenied /> : <SettingsScreen />)}
+          </div>
         </main>
       </div>
     </div>

@@ -8,6 +8,7 @@ import {
   getDriverById,
   updateDriver,
   deleteDriver,
+  getExpiringDrivers,
 } from './driver.controller'
 
 const router = Router()
@@ -17,6 +18,7 @@ router.use(authenticate)
 
 // CRUD
 router.get('/', getDrivers) // All roles can read
+router.get('/expiring', getExpiringDrivers) // All roles can read (or safety officer)
 router.get('/:id', getDriverById) // All roles can read
 
 router.post('/', authorize([Role.fleet_manager, Role.safety_officer]), createDriver)

@@ -32,6 +32,41 @@ export class DriverService {
     });
   }
 
+  static async getExpiringDrivers() {
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+    const drivers = await prisma.driver.findMany({
+      where: {
+        licenseExpiry: {
+          lte: thirtyDaysFromNow
+        },
+        status: {
+          not: DriverStatus.suspended
+        }
+      },
+      orderBy: { licenseExpiry: 'asc' }
+    });
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return drivers.map(d => {
+      const expiry = new Date(d.licenseExpiry);
+      expiry.setHours(0, 0, 0, 0);
+      const timeDiff = expiry.getTime() - today.getTime();
+      const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+      
+      return {
+        id: d.id,
+        name: d.name,
+        licenseNumber: d.licenseNumber.substring(0, 4) + '****',
+        licenseExpiryDate: d.licenseExpiry,
+        daysRemaining
+      };
+    });
+  }
+
   static async getById(id: string) {
     const driver = await prisma.driver.findUnique({
       where: { id },

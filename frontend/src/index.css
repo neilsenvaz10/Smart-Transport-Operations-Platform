@@ -64,69 +64,24 @@
   --color-accent-hover:     #D97706;
 
   /* Surfaces */
-  --color-background:       #F8FAFC;
+  --color-background:       #F7F9FC;
   --color-surface:          #FFFFFF;
   --color-surface-elevated: #FFFFFF;
 
   /* Text */
-  --color-text:             #0F172A;
-  --color-text-muted:       #64748B;
+  --color-text:             #111827;
+  --color-text-muted:       #6B7280;
   --color-text-inverse:     #FFFFFF;
 
   /* Borders */
-  --color-border:           #E2E8F0;
-  --color-border-strong:    #CBD5E1;
+  --color-border:           #E5E7EB;
+  --color-border-strong:    #D1D5DB;
 
   /* Semantic */
   --color-error:            #EF4444;
   --color-success:          #10B981;
   --color-warning:          #F59E0B;
   --color-info:             #3B82F6;
-}
-
-/* ──────────────────────────────────────────────────────────
-   Dark Mode token overrides
-   ────────────────────────────────────────────────────────── */
-.dark,
-[data-theme="dark"] {
-  /* Override Tailwind v4 default colors for dark mode */
-  --color-white:            #1e293b; /* card/modal surface background (slate-800) */
-  --color-slate-50:         #0f172a; /* app background (slate-900) */
-  --color-slate-100:        #334155; /* borders (slate-700) */
-  --color-slate-200:        #475569; /* strong borders (slate-600) */
-  
-  --color-slate-950:        #ffffff; /* headings */
-  --color-slate-900:        #f1f5f9; /* primary text */
-  --color-slate-700:        #cbd5e1; /* body text */
-  --color-slate-600:        #94a3b8; /* secondary text */
-  --color-slate-500:        #64748b; /* muted text */
-  --color-slate-400:        #475569; /* muted icons */
-
-  --color-primary:          #3B82F6;
-  --color-primary-hover:    #2563EB;
-  --color-primary-muted:    #1E3A5F;
-
-  --color-secondary:        #8B5CF6;
-  --color-secondary-hover:  #7C3AED;
-
-  --color-accent:           #FBBF24;
-  --color-accent-hover:     #F59E0B;
-
-  --color-background:       #0F172A;
-  --color-surface:          #1E293B;
-  --color-surface-elevated: #273548;
-
-  --color-text:             #F1F5F9;
-  --color-text-muted:       #94A3B8;
-  --color-text-inverse:     #0F172A;
-
-  --color-border:           #334155;
-  --color-border-strong:    #475569;
-
-  --color-error:            #F87171;
-  --color-success:          #34D399;
-  --color-warning:          #FBBF24;
-  --color-info:             #60A5FA;
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -170,10 +125,16 @@
 @layer components {
   .card {
     background-color: var(--color-surface);
-    border-radius: var(--radius-lg);
+    border-radius: 16px;
     border: 1px solid var(--color-border);
     padding: 1.5rem;
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+    transition: all 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
   }
 
   .btn-primary {
@@ -184,12 +145,12 @@
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
     font-weight: 500;
-    border-radius: var(--radius-md);
+    border-radius: 10px;
     background-color: var(--color-primary);
-    color: var(--color-text-inverse);
+    color: white;
     border: none;
     cursor: pointer;
-    transition: background-color 0.15s ease;
+    transition: all 0.2s ease;
 
     &:hover { background-color: var(--color-primary-hover); }
     &:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -203,229 +164,17 @@
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
     font-weight: 500;
-    border-radius: var(--radius-md);
-    background-color: var(--color-surface);
+    border-radius: 10px;
+    background-color: white;
     color: var(--color-text);
     border: 1px solid var(--color-border);
     cursor: pointer;
-    transition: border-color 0.15s ease, background-color 0.15s ease;
+    transition: all 0.2s ease;
 
     &:hover {
-      background-color: var(--color-surface-elevated);
-      border-color: var(--color-border-strong);
+      background-color: #F3F4F6;
     }
     &:disabled { opacity: 0.5; cursor: not-allowed; }
   }
-}
-
-/* ──────────────────────────────────────────────────────────
-   Dark Theme – Comprehensive overrides
-   Tailwind v4 inlines colors, so we override by selector
-   ────────────────────────────────────────────────────────── */
-
-/* ── Page Background ──────────────────────────────────── */
-.dark body,
-.dark .bg-slate-50 {
-  background-color: #0f172a !important;
-  color: #e2e8f0 !important;
-}
-
-/* ── Cards / Surfaces (bg-white) ─────────────────────── */
-.dark .bg-white {
-  background-color: #1e293b !important;
-}
-
-/* ── Header bar ──────────────────────────────────────── */
-.dark header {
-  background-color: #1e293b !important;
-  border-color: #334155 !important;
-}
-
-/* ── Sidebar Redesign ────────────────────────────────── */
-.dark aside {
-  background-color: #0B1220 !important;
-  border-right-color: rgba(255,255,255,0.05) !important;
-}
-
-.dark aside .border-b,
-.dark aside .border-t {
-  border-color: rgba(255,255,255,0.05) !important;
-}
-
-/* Logo container */
-.dark aside .bg-blue-600.size-8 {
-  background-color: rgba(59,130,246,0.08) !important;
-  box-shadow: 0 0 20px rgba(59,130,246,0.08) !important;
-}
-.dark aside .bg-blue-600.size-8 svg {
-  color: #60A5FA !important;
-}
-
-/* Sidebar texts */
-.dark aside .text-white {
-  color: #E2E8F0 !important;
-}
-.dark aside .text-slate-500 {
-  color: #94A3B8 !important;
-}
-.dark aside .text-slate-400 {
-  color: #8A97AD !important;
-}
-
-/* Nav items - base */
-.dark aside nav button {
-  transition: all 180ms ease !important;
-  border-radius: 12px !important;
-  border: 1px solid transparent;
-}
-
-/* Nav items - active state */
-.dark aside nav button.bg-blue-600 {
-  background-color: rgba(37, 99, 235, 0.14) !important;
-  border: 1px solid rgba(59,130,246,0.18) !important;
-  box-shadow: none !important;
-  color: #F8FAFC !important;
-}
-.dark aside nav button.bg-blue-600 svg {
-  color: #60A5FA !important;
-}
-
-/* Nav items - hover state (inactive) */
-.dark aside nav button:not(.bg-blue-600):hover {
-  background-color: rgba(255,255,255,0.04) !important;
-  transform: translateX(2px) !important;
-  color: #E2E8F0 !important;
-}
-.dark aside nav button:not(.bg-blue-600):hover svg {
-  color: #E2E8F0 !important;
-}
-
-/* Profile section */
-.dark aside > div:last-child > div.flex {
-  background-color: rgba(255,255,255,0.025) !important;
-  border: 1px solid rgba(255,255,255,0.05) !important;
-  border-radius: 12px !important;
-  box-shadow: none !important;
-}
-.dark aside > div:last-child {
-  border-top-color: transparent !important;
-}
-
-/* ── Elevated surfaces / hover states ────────────────── */
-.dark .bg-slate-100 {
-  background-color: #273548 !important;
-}
-
-/* ── Primary text (headings, values) ─────────────────── */
-.dark .text-slate-950,
-.dark .text-slate-900 {
-  color: #f1f5f9 !important;
-}
-
-/* ── Body text ───────────────────────────────────────── */
-.dark .text-slate-800,
-.dark .text-slate-700 {
-  color: #cbd5e1 !important;
-}
-
-/* ── Secondary / muted text ──────────────────────────── */
-.dark .text-slate-600 {
-  color: #94a3b8 !important;
-}
-
-.dark .text-slate-500 {
-  color: #64748b !important;
-}
-
-.dark .text-slate-400 {
-  color: #64748b !important;
-}
-
-/* ── Borders ─────────────────────────────────────────── */
-.dark .border-slate-50,
-.dark .border-slate-100,
-.dark .border-slate-200 {
-  border-color: #334155 !important;
-}
-
-.dark .border-b {
-  border-color: #334155 !important;
-}
-
-.dark .divide-slate-50 > * + * {
-  border-color: #334155 !important;
-}
-
-/* ── Form Controls ───────────────────────────────────── */
-.dark input,
-.dark select,
-.dark textarea {
-  background-color: #0f172a !important;
-  color: #e2e8f0 !important;
-  border-color: #334155 !important;
-}
-
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: #64748b !important;
-}
-
-.dark input:focus,
-.dark select:focus,
-.dark textarea:focus {
-  border-color: #3b82f6 !important;
-  background-color: #0f172a !important;
-}
-
-/* ── Tables ──────────────────────────────────────────── */
-.dark thead tr,
-.dark .bg-slate-50\/50 {
-  background-color: #0f172a !important;
-}
-
-.dark tbody tr:hover {
-  background-color: #273548 !important;
-}
-
-/* ── Dashed borders (empty states) ───────────────────── */
-.dark .border-dashed {
-  border-color: #475569 !important;
-}
-
-/* ── Status badge light backgrounds ──────────────────── */
-.dark .bg-emerald-50  { background-color: rgba(16, 185, 129, 0.15) !important; }
-.dark .bg-blue-50     { background-color: rgba(59, 130, 246, 0.15) !important; }
-.dark .bg-orange-50   { background-color: rgba(249, 115, 22, 0.15) !important; }
-.dark .bg-amber-50    { background-color: rgba(245, 158, 11, 0.15) !important; }
-.dark .bg-red-50      { background-color: rgba(239, 68, 68, 0.15) !important; }
-.dark .bg-violet-50   { background-color: rgba(139, 92, 246, 0.15) !important; }
-.dark .bg-indigo-50   { background-color: rgba(99, 102, 241, 0.15) !important; }
-.dark .bg-gray-50     { background-color: rgba(100, 116, 139, 0.15) !important; }
-
-/* ── KPI card icon backgrounds (keep vivid) ──────────── */
-/* These are already vivid (bg-blue-600, bg-emerald-500, etc.) — leave as is */
-
-/* ── Recharts tooltip ────────────────────────────────── */
-.dark .recharts-default-tooltip {
-  background-color: #1e293b !important;
-  border-color: #334155 !important;
-  color: #e2e8f0 !important;
-}
-
-/* ── Modals / Overlays ───────────────────────────────── */
-.dark .fixed.inset-0 {
-  background-color: rgba(0, 0, 0, 0.6) !important;
-}
-
-/* ── Scrollbar (Webkit) ──────────────────────────────── */
-.dark ::-webkit-scrollbar-track {
-  background: #0f172a;
-}
-.dark ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 999px;
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
 }
 

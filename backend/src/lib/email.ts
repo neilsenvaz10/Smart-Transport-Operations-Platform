@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_default_key');
 
-const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@transitops.com';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 
 export async function sendInvitationEmail(
   fullName: string,

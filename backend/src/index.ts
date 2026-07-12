@@ -14,6 +14,7 @@ import fuelRoutes from './modules/fuel/fuel.routes';
 import expenseRoutes from './modules/expenses/expense.routes';
 import reportsRoutes from './modules/reports/reports.routes';
 import userRoutes from './modules/users/user.routes';
+import { startLicenseReminderCron } from './jobs/licenseReminders';
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '5000', 10);
@@ -94,6 +95,11 @@ app.get('/', (_req: Request, res: Response) => {
 
 // ─── Global Error Handler ────────────────────────────────────────────────────
 app.use(errorHandler);
+
+// ─── Cron Jobs ────────────────────────────────────────────────────────────────
+if (NODE_ENV !== 'test') {
+  startLicenseReminderCron();
+}
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 if (NODE_ENV !== 'test') {

@@ -39,6 +39,19 @@ export const getDrivers = async (req: Request, res: Response, next: NextFunction
   }
 }
 
+export const getExpiringDrivers = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const expiring = await DriverService.getExpiringDrivers()
+    res.json({
+      status: 'success',
+      results: expiring.length,
+      data: expiring,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const getDriverById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const driver = await DriverService.getById(req.params.id)
