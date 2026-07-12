@@ -219,53 +219,143 @@
 }
 
 /* ──────────────────────────────────────────────────────────
-   Dynamic Dark Theme Override mappings
+   Dark Theme – Comprehensive overrides
+   Tailwind v4 inlines colors, so we override by selector
    ────────────────────────────────────────────────────────── */
-.dark body {
-  background-color: var(--color-slate-50) !important;
-  color: var(--color-slate-900) !important;
-}
 
-.dark .bg-white {
-  background-color: var(--color-white) !important;
-}
-
+/* ── Page Background ──────────────────────────────────── */
+.dark body,
 .dark .bg-slate-50 {
-  background-color: var(--color-slate-50) !important;
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
 }
 
+/* ── Cards / Surfaces (bg-white) ─────────────────────── */
+.dark .bg-white {
+  background-color: #1e293b !important;
+}
+
+/* ── Header bar ──────────────────────────────────────── */
+.dark header {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* ── Elevated surfaces / hover states ────────────────── */
+.dark .bg-slate-100 {
+  background-color: #273548 !important;
+}
+
+/* ── Primary text (headings, values) ─────────────────── */
 .dark .text-slate-950,
-.dark .text-slate-900,
+.dark .text-slate-900 {
+  color: #f1f5f9 !important;
+}
+
+/* ── Body text ───────────────────────────────────────── */
 .dark .text-slate-800,
 .dark .text-slate-700 {
-  color: var(--color-slate-900) !important;
+  color: #cbd5e1 !important;
 }
 
-.dark .text-slate-600,
-.dark .text-slate-500,
+/* ── Secondary / muted text ──────────────────────────── */
+.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+.dark .text-slate-500 {
+  color: #64748b !important;
+}
+
 .dark .text-slate-400 {
-  color: var(--color-slate-600) !important;
+  color: #64748b !important;
 }
 
-.dark .border-slate-100,
+/* ── Borders ─────────────────────────────────────────── */
 .dark .border-slate-50,
+.dark .border-slate-100,
 .dark .border-slate-200 {
-  border-color: var(--color-slate-100) !important;
+  border-color: #334155 !important;
 }
 
+.dark .border-b {
+  border-color: #334155 !important;
+}
+
+.dark .divide-slate-50 > * + * {
+  border-color: #334155 !important;
+}
+
+/* ── Form Controls ───────────────────────────────────── */
 .dark input,
 .dark select,
 .dark textarea {
-  background-color: var(--color-white) !important;
-  color: var(--color-slate-900) !important;
-  border-color: var(--color-slate-100) !important;
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
 }
 
-.dark input::placeholder {
-  color: var(--color-slate-500) !important;
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
 }
 
-/* Modals & Popovers override */
-.dark .bg-white\/80 {
-  background-color: rgba(30, 41, 59, 0.8) !important;
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #3b82f6 !important;
+  background-color: #0f172a !important;
 }
+
+/* ── Tables ──────────────────────────────────────────── */
+.dark thead tr,
+.dark .bg-slate-50\/50 {
+  background-color: #0f172a !important;
+}
+
+.dark tbody tr:hover {
+  background-color: #273548 !important;
+}
+
+/* ── Dashed borders (empty states) ───────────────────── */
+.dark .border-dashed {
+  border-color: #475569 !important;
+}
+
+/* ── Status badge light backgrounds ──────────────────── */
+.dark .bg-emerald-50  { background-color: rgba(16, 185, 129, 0.15) !important; }
+.dark .bg-blue-50     { background-color: rgba(59, 130, 246, 0.15) !important; }
+.dark .bg-orange-50   { background-color: rgba(249, 115, 22, 0.15) !important; }
+.dark .bg-amber-50    { background-color: rgba(245, 158, 11, 0.15) !important; }
+.dark .bg-red-50      { background-color: rgba(239, 68, 68, 0.15) !important; }
+.dark .bg-violet-50   { background-color: rgba(139, 92, 246, 0.15) !important; }
+.dark .bg-indigo-50   { background-color: rgba(99, 102, 241, 0.15) !important; }
+.dark .bg-gray-50     { background-color: rgba(100, 116, 139, 0.15) !important; }
+
+/* ── KPI card icon backgrounds (keep vivid) ──────────── */
+/* These are already vivid (bg-blue-600, bg-emerald-500, etc.) — leave as is */
+
+/* ── Recharts tooltip ────────────────────────────────── */
+.dark .recharts-default-tooltip {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+/* ── Modals / Overlays ───────────────────────────────── */
+.dark .fixed.inset-0 {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ── Scrollbar (Webkit) ──────────────────────────────── */
+.dark ::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 999px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
