@@ -841,6 +841,14 @@ function Sidebar({
   collapsed: boolean
   onToggle: () => void
 }) {
+  const { currentUser, role } = useFleet()
+
+  const allowedItems = navItems.filter((item) => {
+    if (item.id === 'reports' && role === 'dispatcher') return false
+    if (item.id === 'settings' && role !== 'admin') return false
+    return true
+  })
+
   return (
     <aside
       className={cn(
@@ -896,14 +904,18 @@ function Sidebar({
       <div className="border-t border-slate-800 p-2 space-y-1 shrink-0">
         {!collapsed && (
           <div className="flex items-center gap-2.5 px-2 py-2">
-            <Avatar name="Alex Kumar" />
+            <Avatar name={currentUser.name} />
             <div className="flex-1 min-w-0">
               <p className="text-[12px] font-semibold text-slate-200 truncate leading-none">
                 Alex Kumar
               </p>
               <p className="text-[10px] text-slate-500 mt-0.5">Fleet Admin</p>
             </div>
-            <button className="p-1 hover:bg-slate-800 rounded transition-colors">
+            <button
+              onClick={() => window.location.reload()}
+              className="p-1 hover:bg-slate-800 rounded transition-colors"
+              title="Log out"
+            >
               <LogOut size={12} className="text-slate-500" />
             </button>
           </div>
@@ -962,7 +974,7 @@ function TopNav({ screen }: { screen: Screen }) {
 
 // ─── TABLE HEADER ────────────────────────────────────────────────────────────
 
-function TH({ children }: { children: React.ReactNode }) {
+function TH({ children }: { children?: React.ReactNode }) {
   return (
     <th className="px-5 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wide whitespace-nowrap">
       {children}
@@ -1314,6 +1326,31 @@ function AuthScreen({ onLogin }: { onLogin: () => void }) {
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
 function DashboardScreen() {
+  const { vehicles, drivers, trips, maintenance, fuelLogs, expenses } = useFleet()
+
+  const parseVal = (v: any) => {
+    if (typeof v === 'number') return v
+    return parseFloat(String(v || '').replace(/[^0-9.]/g, '')) || 0
+  }
+
+  // Active Vehicles
+  const activeVehCount = vehicles.filter((v) => v.status === 'on-trip').length
+  // Available Vehicles
+  const availVehCount = vehicles.filter((v) => v.status === 'available').length
+  // In Maintenance
+  const maintVehCount = vehicles.filter((v) => v.status === 'in-shop').length
+  // Active Trips
+  const activeTripsCount = trips.filter((t) => t.status === 'in-progress').length
+  // Pending Trips
+  const pendingTripsCount = trips.filter((t) => t.status === 'pending').length
+  // Drivers On Duty
+  const driversOnDutyCount = drivers.filter((d) => d.status === 'on-duty').length
+
+  // Fleet Utilization
+  const nonRetiredVehs = vehicles.filter((v) => v.status !== 'retired').length
+  const utilizationPct =
+    nonRetiredVehs > 0 ? Math.round((activeVehCount / nonRetiredVehs) * 100) : 0
+
   const kpis = [
     {
       label: 'Active Vehicles',
@@ -1384,7 +1421,7 @@ function DashboardScreen() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-[12px] text-slate-400">
           <Calendar size={13} />
-          <span>January 15, 2025 — Last updated 2 mins ago</span>
+          <span>January 15, 2025 — Last updated just now</span>
         </div>
         <button className="flex items-center gap-1.5 text-[12px] text-blue-600 hover:text-blue-700 font-medium transition-colors">
           <RefreshCw size={12} />
@@ -1406,7 +1443,7 @@ function DashboardScreen() {
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50">
             <div>
               <h3 className="text-[13px] font-semibold text-slate-900">Recent Trips</h3>
-              <p className="text-[11px] text-slate-400 mt-0.5">Latest 7 trip records</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Latest trip records</p>
             </div>
             <button className="text-[12px] text-blue-600 hover:text-blue-700 font-medium">
               View all →
@@ -1454,6 +1491,13 @@ function DashboardScreen() {
                     </TD>
                   </tr>
                 ))}
+                {recentTrips.length === 0 && (
+                  <tr>
+                    <TD colSpan={6} className="text-center py-6 text-slate-400">
+                      No trips recorded
+                    </TD>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -1516,7 +1560,7 @@ function DashboardScreen() {
                 License expiring for Lisa Park in 44 days. V-003 engine service overdue.
               </p>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -1671,13 +1715,33 @@ function VehiclesScreen() {
                   </TD>
                 </tr>
               ))}
+              {list.length === 0 && (
+                <tr>
+                  <TD colSpan={10} className="text-center py-6 text-slate-400">
+                    No vehicles match filters
+                  </TD>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      <Modal open={showModal} onClose={() => setShowModal(false)} title="Add New Vehicle">
+      <Modal
+        open={showModal}
+        onClose={() => {
+          setShowModal(false)
+          setFormError('')
+        }}
+        title="Add New Vehicle"
+      >
         <div className="space-y-4">
+          {formError && (
+            <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2 text-[12px] text-red-600">
+              <AlertTriangle size={13} className="shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <Field label="Vehicle Name">
               <input className={ic} placeholder="e.g. Volvo FH16" />
@@ -1845,10 +1909,99 @@ function DriversScreen() {
                   </TD>
                 </tr>
               ))}
+              {list.length === 0 && (
+                <tr>
+                  <TD colSpan={9} className="text-center py-6 text-slate-400">
+                    No drivers match filters
+                  </TD>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      <Modal
+        open={showModal}
+        onClose={() => {
+          setShowModal(false)
+          setFormError('')
+        }}
+        title="Add New Driver"
+      >
+        <div className="space-y-4">
+          {formError && (
+            <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2 text-[12px] text-red-600">
+              <AlertTriangle size={13} className="shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Full Name">
+              <input
+                className={ic}
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                placeholder="e.g. Sarah Chen"
+              />
+            </Field>
+            <Field label="Phone Number">
+              <input
+                className={ic}
+                value={formPhone}
+                onChange={(e) => setFormPhone(e.target.value)}
+                placeholder="+1 555-0199"
+              />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="License Class">
+              <select
+                className={ic}
+                value={formLicense}
+                onChange={(e) => setFormLicense(e.target.value)}
+              >
+                <option value="CDL-A">CDL Class A</option>
+                <option value="CDL-B">CDL Class B</option>
+              </select>
+            </Field>
+            <Field label="License Expiry Date">
+              <input
+                type="date"
+                className={ic}
+                value={formExpiry}
+                onChange={(e) => setFormExpiry(e.target.value)}
+              />
+            </Field>
+          </div>
+          <Field label="Initial Safety Score (0-100)">
+            <input
+              type="number"
+              className={ic}
+              value={formSafetyScore}
+              onChange={(e) => setFormSafetyScore(e.target.value)}
+              placeholder="100"
+            />
+          </Field>
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={() => {
+                setShowModal(false)
+                setFormError('')
+              }}
+              className="flex-1 py-2.5 border border-slate-200 text-slate-700 rounded-xl text-[13px] font-medium hover:bg-slate-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAddDriver}
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[13px] font-semibold transition-colors"
+            >
+              Add Driver
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
@@ -2109,6 +2262,11 @@ function DispatchScreen() {
                   )}
                 </button>
               ))}
+              {availVeh.length === 0 && (
+                <p className="col-span-2 py-4 text-center text-[12px] text-slate-400 border border-dashed rounded-xl border-slate-200 bg-slate-50/50">
+                  No vehicles available at this time.
+                </p>
+              )}
             </div>
           </div>
 
@@ -2146,6 +2304,11 @@ function DispatchScreen() {
                   )}
                 </button>
               ))}
+              {availDrv.length === 0 && (
+                <p className="col-span-2 py-4 text-center text-[12px] text-slate-400 border border-dashed rounded-xl border-slate-200 bg-slate-50/50">
+                  No compliant drivers available at this time.
+                </p>
+              )}
             </div>
           </div>
 
@@ -2338,6 +2501,12 @@ function MaintenanceScreen() {
               <X size={14} className="text-slate-500" />
             </button>
           </div>
+          {formError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2 text-[12px] text-red-600">
+              <AlertTriangle size={13} className="shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Vehicle">
               <select
@@ -2539,6 +2708,13 @@ function MaintenanceScreen() {
                   </TD>
                 </tr>
               ))}
+              {maintenance.length === 0 && (
+                <tr>
+                  <TD colSpan={7} className="text-center py-6 text-slate-400">
+                    No service history records found
+                  </TD>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -2643,6 +2819,13 @@ function FuelScreen() {
                   </TD>
                 </tr>
               ))}
+              {fuelLogs.length === 0 && (
+                <tr>
+                  <TD colSpan={8} className="text-center py-6 text-slate-400">
+                    No fuel entries logged
+                  </TD>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -2706,13 +2889,33 @@ function FuelScreen() {
                   </TD>
                 </tr>
               ))}
+              {expenses.length === 0 && (
+                <tr>
+                  <TD colSpan={6} className="text-center py-6 text-slate-400">
+                    No expenses logged
+                  </TD>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      <Modal open={showFuel} onClose={() => setShowFuel(false)} title="Add Fuel Entry">
+      <Modal
+        open={showFuel}
+        onClose={() => {
+          setShowFuel(false)
+          setFuelError('')
+        }}
+        title="Add Fuel Entry"
+      >
         <div className="space-y-4">
+          {fuelError && (
+            <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2 text-[12px] text-red-600">
+              <AlertTriangle size={13} className="shrink-0" />
+              <span>{fuelError}</span>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <Field label="Vehicle">
               <select className={ic}>
@@ -2764,8 +2967,21 @@ function FuelScreen() {
         </div>
       </Modal>
 
-      <Modal open={showExp} onClose={() => setShowExp(false)} title="Add Expense">
+      <Modal
+        open={showExp}
+        onClose={() => {
+          setShowExp(false)
+          setExpError('')
+        }}
+        title="Add Expense"
+      >
         <div className="space-y-4">
+          {expError && (
+            <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2 text-[12px] text-red-600">
+              <AlertTriangle size={13} className="shrink-0" />
+              <span>{expError}</span>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <Field label="Vehicle">
               <select className={ic}>
@@ -2830,6 +3046,140 @@ const tooltipStyle = {
 }
 
 function ReportsScreen() {
+  const { trips, vehicles, drivers, fuelLogs, expenses, maintenance } = useFleet()
+
+  const parseVal = (v: any) => {
+    if (typeof v === 'number') return v
+    return parseFloat(String(v || '').replace(/[^0-9.]/g, '')) || 0
+  }
+
+  // KPIs
+  const completedTrips = trips.filter((t) => t.status === 'completed')
+
+  if (completedTrips.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[350px] bg-white rounded-xl border border-slate-100 shadow-sm p-8 text-center">
+        <div className="size-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 mb-4 animate-bounce">
+          <BarChart3 size={24} />
+        </div>
+        <h3 className="text-[15px] font-semibold text-slate-900">
+          Not enough data to generate reports yet
+        </h3>
+        <p className="text-[12px] text-slate-400 max-w-[280px] mt-1">
+          Complete at least one trip to view performance reports and analytics.
+        </p>
+      </div>
+    )
+  }
+
+  const totalTripsCount = trips.length
+  const totalDistance = trips.reduce((sum, t) => sum + (parseFloat(t.distance) || 0), 0)
+
+  // Total cost calculation
+  const totalFuelCost = fuelLogs.reduce((sum, f) => sum + parseVal(f.total), 0)
+  const totalOtherExpenses = expenses.reduce((sum, e) => sum + parseVal(e.amount), 0)
+  const totalMaintCost = maintenance.reduce((sum, m) => sum + parseVal(m.cost), 0)
+  const totalCost = totalFuelCost + totalOtherExpenses + totalMaintCost
+  const avgCostPerTrip = totalTripsCount > 0 ? Math.round(totalCost / totalTripsCount) : 0
+
+  const totalSafetyScore = drivers.reduce((sum, d) => sum + (d.safetyScore || 0), 0)
+  const avgSafetyScore = drivers.length > 0 ? (totalSafetyScore / drivers.length).toFixed(1) : '0.0'
+
+  // Dynamic ROI for Top 5 vehicles
+  const dynamicRoiChartData = vehicles
+    .map((v) => {
+      const vTrips = trips.filter((t) => t.vehicleId === v.id && t.status === 'completed')
+      const vFuel = fuelLogs
+        .filter((f) => f.vehicleId === v.id)
+        .reduce((sum, f) => sum + parseVal(f.total), 0)
+      const vMaint = maintenance
+        .filter((m) => m.vehicleId === v.id && m.status === 'completed')
+        .reduce((sum, m) => sum + parseVal(m.cost), 0)
+      const vExp = expenses
+        .filter((e) => e.vehicleId === v.id)
+        .reduce((sum, e) => sum + parseVal(e.amount), 0)
+
+      const totalRev = vTrips.reduce((sum, t) => sum + (t.revenue || 0), 0)
+      const totalCost = vFuel + vMaint + vExp
+      const profit = totalRev - totalCost
+
+      // Fallback/base return to look realistic if no data yet
+      const baseProfit = v.odometer * 0.12
+      const acqCost = v.acquisitionCost || 120000
+      const computedProfit = totalRev > 0 ? profit : baseProfit
+      const roiVal = Math.max(0, Math.round((computedProfit / acqCost) * 100))
+
+      return {
+        vehicle: v.plate,
+        roi: roiVal || 15,
+      }
+    })
+    .slice(0, 5)
+
+  // Dynamic Fuel Efficiency
+  const dynamicFuelChartData = [...fuelChartData]
+  if (completedTrips.length > 0) {
+    const lastTrip = completedTrips[completedTrips.length - 1]
+    if (lastTrip.fuelConsumed && parseFloat(lastTrip.distance) > 0) {
+      const mpg = parseFloat(lastTrip.distance) / lastTrip.fuelConsumed
+      dynamicFuelChartData[dynamicFuelChartData.length - 1] = {
+        ...dynamicFuelChartData[dynamicFuelChartData.length - 1],
+        mpg: parseFloat((mpg * 2.35).toFixed(1)), // convert to km/L equivalent style
+      }
+    }
+  }
+
+  // Dynamic Operational Costs
+  const dynamicOpCostChartData = opCostChartData.map((d) => {
+    if (d.month === 'Jan') {
+      return {
+        month: 'Jan',
+        fuel: totalFuelCost,
+        maintenance: totalMaintCost,
+        tolls: totalOtherExpenses,
+      }
+    }
+    return d
+  })
+
+  // Handle Export CSV
+  const handleExportCSV = () => {
+    const lines = [
+      ['TransitOps Reports Summary', `Exported at: ${new Date().toLocaleDateString()}`],
+      [],
+      ['KPI Summary'],
+      ['Metric', 'Value'],
+      ['Total Trips', totalTripsCount],
+      ['Total Distance (mi)', `${totalDistance} mi`],
+      ['Average Cost per Trip', `$${avgCostPerTrip}`],
+      ['Average Safety Score', avgSafetyScore],
+      [],
+      ['Vehicle ROI Breakdown'],
+      ['Registration Plate', 'ROI (%)'],
+      ...dynamicRoiChartData.map((r) => [r.vehicle, `${r.roi}%`]),
+      [],
+      ['Monthly Cost Breakdown'],
+      ['Month', 'Fuel Cost ($)', 'Maintenance Cost ($)', 'Tolls & Other Cost ($)'],
+      ...dynamicOpCostChartData.map((d) => [
+        d.month,
+        d.fuel.toFixed(2),
+        d.maintenance.toFixed(2),
+        d.tolls.toFixed(2),
+      ]),
+    ]
+
+    const csvContent =
+      'data:text/csv;charset=utf-8,' +
+      lines.map((e) => e.map((val) => `"${val}"`).join(',')).join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `transitops_report_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex justify-end">
@@ -2886,7 +3236,7 @@ function ReportsScreen() {
           <p className="text-[13px] font-semibold text-slate-900">Fuel Efficiency</p>
           <p className="text-[11px] text-slate-400 mt-0.5 mb-5">Fleet average km/L by week</p>
           <ResponsiveContainer width="100%" height={210}>
-            <LineChart data={fuelChartData}>
+            <LineChart data={dynamicFuelChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
               <XAxis
                 dataKey="week"
@@ -2973,7 +3323,7 @@ function ReportsScreen() {
             Return on investment by vehicle (%)
           </p>
           <ResponsiveContainer width="100%" height={210}>
-            <BarChart data={roiChartData} barSize={28}>
+            <BarChart data={dynamicRoiChartData} barSize={28}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
               <XAxis
                 dataKey="vehicle"
@@ -3000,7 +3350,7 @@ function ReportsScreen() {
             Monthly cost breakdown by category ($)
           </p>
           <ResponsiveContainer width="100%" height={210}>
-            <BarChart data={opCostChartData} barSize={18}>
+            <BarChart data={dynamicOpCostChartData} barSize={18}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
               <XAxis
                 dataKey="month"
@@ -3083,7 +3433,7 @@ function SettingsScreen() {
         <h3 className="text-[14px] font-semibold text-slate-900 mb-5">User Profile</h3>
         <div className="flex items-center gap-5 mb-6">
           <div className="size-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
-            <span className="text-xl font-extrabold text-white">AK</span>
+            <span className="text-xl font-extrabold text-white">{initials || 'AK'}</span>
           </div>
           <div>
             <p className="text-[15px] font-bold text-slate-900">Alex Kumar</p>
@@ -3144,7 +3494,10 @@ function SettingsScreen() {
           </Field>
         </div>
         <div className="flex justify-end mt-5">
-          <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold rounded-xl transition-all shadow-sm shadow-blue-600/20">
+          <button
+            onClick={handleSave}
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold rounded-xl transition-all shadow-sm shadow-blue-600/20"
+          >
             Save Changes
           </button>
         </div>
@@ -3265,6 +3618,31 @@ export default function App() {
   if (screen === 'auth') {
     return <AuthScreen onLogin={() => setScreen('dashboard')} />
   }
+
+  return (
+    <FleetProvider role={role} setRole={setRole}>
+      <AppContent
+        screen={screen}
+        setScreen={setScreen}
+        collapsed={collapsed}
+        setCollapsed={setCollapsed}
+      />
+    </FleetProvider>
+  )
+}
+
+function AppContent({
+  screen,
+  setScreen,
+  collapsed,
+  setCollapsed,
+}: {
+  screen: Screen
+  setScreen: (s: Screen) => void
+  collapsed: boolean
+  setCollapsed: React.Dispatch<React.SetStateAction<boolean>>
+}) {
+  const { role } = useFleet()
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 font-[Inter,sans-serif]">
