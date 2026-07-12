@@ -659,8 +659,9 @@ function DashboardScreen() {
 
   // Alerts logic
   const expiringDrivers = drivers.filter(d => {
-    if (!d.expiry) return false;
-    const diff = new Date(d.expiry).getTime() - TODAY.getTime();
+    const expiry = d.licenseExpiry || d.expiry;
+    if (!expiry) return false;
+    const diff = new Date(expiry).getTime() - TODAY.getTime();
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
     return days > 0 && days <= 45;
   });
@@ -672,7 +673,8 @@ function DashboardScreen() {
 
   const alertList: string[] = [];
   expiringDrivers.forEach(d => {
-    const days = Math.ceil((new Date(d.expiry).getTime() - TODAY.getTime()) / (1000 * 60 * 60 * 24));
+    const expiry = d.licenseExpiry || d.expiry;
+    const days = Math.ceil((new Date(expiry).getTime() - TODAY.getTime()) / (1000 * 60 * 60 * 24));
     alertList.push(`License expiring for ${d.name} in ${days} days.`);
   });
   overdueMaint.forEach(m => {
@@ -1302,13 +1304,15 @@ function DispatchScreen() {
     if (!form.driverId) e.driverId = "Select a driver";
 
     const v = vehicles.find(veh => veh.id === form.vehicleId);
-    if (v && Number(form.weight) > (v.capacity || 0)) {
-      e.vehicleId = `Overload Warning: Cargo weight (${form.weight}t) exceeds vehicle capacity (${v.capacity}t)`;
+    const capacityTons = v ? (v.maxLoadCapacity ? (v.maxLoadCapacity / 1000) : (v.capacity || 0)) : 0;
+    if (v && Number(form.weight) > capacityTons) {
+      e.vehicleId = `Overload Warning: Cargo weight (${form.weight}t) exceeds vehicle capacity (${capacityTons}t)`;
     }
 
     const d = drivers.find(drv => drv.id === form.driverId);
-    if (d && d.expiry && new Date(d.expiry).getTime() < TODAY.getTime()) {
-      e.driverId = `Compliance Warning: Selected driver has an expired license (${d.expiry})`;
+    const expiryDate = d?.licenseExpiry || d?.expiry;
+    if (d && expiryDate && new Date(expiryDate).getTime() < TODAY.getTime()) {
+      e.driverId = `Compliance Warning: Selected driver has an expired license (${new Date(expiryDate).toLocaleDateString()})`;
     }
 
     setErrors(e);
@@ -1317,7 +1321,7 @@ function DispatchScreen() {
 
   // Filter lists for wizard
   const availVeh = vehicles.filter(v => v.status === "available");
-  const availDrv = drivers.filter(d => d.status === "available" && new Date(d.expiry).getTime() >= TODAY.getTime());
+  const availDrv = drivers.filter(d => d.status === "available" && new Date(d.licenseExpiry || d.expiry).getTime() >= TODAY.getTime());
 
   const selVeh = vehicles.find(v => v.id === form.vehicleId);
   const selDrv = drivers.find(d => d.id === form.driverId);
@@ -1720,8 +1724,8 @@ function DispatchScreen() {
                     <Truck size={13} className={form.vehicleId === v.id ? "text-white" : "text-slate-500"} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-slate-900 truncate">{v.name}</p>
-                    <p className="text-[11px] text-slate-400">Plate: {v.plate} ┬╖ Capacity: {v.capacity ?? 20}t</p>
+                    <p className="text-[13px] font-semibold text-slate-900 truncate">{v.nameModel || v.name}</p>
+                    <p className="text-[11px] text-slate-400">Plate: {v.registrationNumber || v.plate} ┬╖ Capacity: {v.maxLoadCapacity ? (v.maxLoadCapacity / 1000) : (v.capacity ?? 20)}t</p>
                   </div>
                   {form.vehicleId === v.id && <CheckCircle size={14} className="text-blue-600 shrink-0" />}
                 </button>
@@ -1745,7 +1749,7 @@ function DispatchScreen() {
                   <Avatar name={d.name} size="md" />
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-semibold text-slate-900 truncate">{d.name}</p>
-                    <p className="text-[11px] text-slate-400">{d.license} ┬╖ Safety: {d.safetyScore}/100</p>
+                    <p className="text-[11px] text-slate-400">{d.licenseNumber || d.license} ┬╖ Safety: {d.safetyScore}/100</p>
                   </div>
                   {form.driverId === d.id && <CheckCircle size={14} className="text-blue-600 shrink-0" />}
                 </button>
@@ -1954,7 +1958,7 @@ function MaintenanceScreen() {
             <Field label="Vehicle">
               <select className={ic} value={formVehicle} onChange={e => setFormVehicle(e.target.value)}>
                 <option value="">Select vehicle</option>
-                {vehicles.map(v => <option key={v.id} value={v.id}>{v.name} ({v.plate})</option>)}
+                {vehicles.map(v => <option key={v.id} value={v.id}>{v.nameModel || v.name} ({v.registrationNumber || v.plate})</option>)}
               </select>
             </Field>
             <Field label="Service Type">
@@ -2305,7 +2309,7 @@ function FuelScreen() {
             <Field label="Vehicle">
               <select className={ic} value={fuelVehicle} onChange={e => setFuelVehicle(e.target.value)}>
                 <option value="">Select vehicle</option>
-                {vehicles.map(v => <option key={v.id} value={v.id}>{v.name} ({v.plate})</option>)}
+                {vehicles.map(v => <option key={v.id} value={v.id}>{v.nameModel || v.name} ({v.registrationNumber || v.plate})</option>)}
               </select>
             </Field>
             <Field label="Driver">
@@ -2343,7 +2347,7 @@ function FuelScreen() {
             <Field label="Vehicle">
               <select className={ic} value={expVehicle} onChange={e => setExpVehicle(e.target.value)}>
                 <option value="">Select vehicle</option>
-                {vehicles.map(v => <option key={v.id} value={v.id}>{v.name} ({v.plate})</option>)}
+                {vehicles.map(v => <option key={v.id} value={v.id}>{v.nameModel || v.name} ({v.registrationNumber || v.plate})</option>)}
               </select>
             </Field>
             <Field label="Category">
