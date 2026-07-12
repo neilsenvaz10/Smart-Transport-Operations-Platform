@@ -7,30 +7,37 @@ import './styles/index.css'
 
 function NotFoundPage() {
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--background)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '1rem',
-      color: 'var(--foreground)',
-      fontFamily: 'sans-serif'
-    }}>
-      <h1 style={{ fontSize: '3rem', fontWeight: 700 }}>404</h1>
-      <p style={{ color: 'var(--muted-foreground)' }}>Page not found</p>
-      <Link to="/" style={{
-        display: 'inline-flex',
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--background)',
+        display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '8px 16px',
-        borderRadius: '8px',
-        background: 'var(--primary)',
-        color: 'var(--primary-foreground)',
-        textDecoration: 'none',
-        fontWeight: 500
-      }}>Back home</Link>
+        gap: '1rem',
+        color: 'var(--foreground)',
+        fontFamily: 'sans-serif',
+      }}
+    >
+      <h1 style={{ fontSize: '3rem', fontWeight: 700 }}>404</h1>
+      <p style={{ color: 'var(--muted-foreground)' }}>Page not found</p>
+      <Link
+        to="/"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '8px 16px',
+          borderRadius: '8px',
+          background: 'var(--primary)',
+          color: 'var(--primary-foreground)',
+          textDecoration: 'none',
+          fontWeight: 500,
+        }}
+      >
+        Back home
+      </Link>
     </div>
   )
 }
