@@ -4587,6 +4587,23 @@ function ReportsScreen() {
 
   // KPIs
   const completedTrips = trips.filter((t) => t.status === 'completed')
+
+  if (completedTrips.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[350px] bg-white rounded-xl border border-slate-100 shadow-sm p-8 text-center">
+        <div className="size-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 mb-4 animate-bounce">
+          <BarChart3 size={24} />
+        </div>
+        <h3 className="text-[15px] font-semibold text-slate-900">
+          Not enough data to generate reports yet
+        </h3>
+        <p className="text-[12px] text-slate-400 max-w-[280px] mt-1">
+          Complete at least one trip to view performance reports and analytics.
+        </p>
+      </div>
+    )
+  }
+
   const totalTripsCount = trips.length
   const totalDistance = trips.reduce((sum, t) => sum + (parseFloat(t.distance) || 0), 0)
 
