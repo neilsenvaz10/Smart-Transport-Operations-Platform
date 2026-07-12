@@ -580,9 +580,6 @@ function TopNav({ screen }: { screen: Screen }) {
           <input type="text" placeholder="Search anything…"
             className="pl-8 pr-4 py-2 text-[13px] border border-slate-200 rounded-lg bg-slate-50 w-52 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all" />
         </div>
-        <button onClick={toggleTheme} className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Toggle Theme">
-          {theme === "dark" ? <Sun size={15} className="text-slate-500" /> : <Moon size={15} className="text-slate-500" />}
-        </button>
         <button className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors">
           <Bell size={15} className="text-slate-500" />
           <span className="absolute top-1.5 right-1.5 size-1.5 bg-red-500 rounded-full" />
