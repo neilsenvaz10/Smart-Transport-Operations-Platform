@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, Truck, Users, MapPin, Wrench, Fuel, BarChart3, Settings,
   Search, Bell, ChevronDown, ChevronLeft, ChevronRight, Plus, Download,
@@ -11,13 +12,73 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 
-type Screen = "auth" | "dashboard" | "vehicles" | "drivers" | "dispatch" | "maintenance" | "fuel" | "reports" | "settings";
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
+
+interface HealthResponse {
+  status: string;
+  timestamp: string;
+  service: string;
+  version: string;
+}
+
+async function fetchHealth(): Promise<HealthResponse> {
+  const res = await fetch(`${API_BASE}/health`);
+  if (!res.ok) throw new Error(`Health check failed: ${res.status}`);
+  return res.json();
+}
+
+function HealthBadge() {
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["health"],
+    queryFn: fetchHealth,
+    retry: 3,
+    refetchInterval: 30_000,
+  });
+
+  const baseStyle: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "4px 12px",
+    borderRadius: "9999px",
+    fontSize: "0.8rem",
+    fontWeight: 500,
+  };
+
+  if (isLoading) {
+    return (
+      <span style={{ ...baseStyle, background: "#f1f5f9", color: "#64748b" }} className="animate-pulse">
+        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#64748b" }} />
+        Checking API…
+      </span>
+    );
+  }
+
+  if (isError) {
+    return (
+      <span style={{ ...baseStyle, background: "#FEE2E2", color: "#B91C1C" }}>
+        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#EF4444" }} />
+        API Offline
+      </span>
+    );
+  }
+
+  return (
+    <span style={{ ...baseStyle, background: "#D1FAE5", color: "#065F46" }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10B981" }} />
+      API {data?.status}
+    </span>
+  );
+}
 
 function cn(...c: (string | false | undefined | null)[]): string {
   return c.filter(Boolean).join(" ");
 }
 
+type Screen = "auth" | "dashboard" | "vehicles" | "drivers" | "dispatch" | "maintenance" | "fuel" | "reports" | "settings";
+
 const TODAY = new Date("2025-01-15");
+
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
@@ -327,6 +388,7 @@ function TopNav({ screen }: { screen: Screen }) {
         <p className="text-[11px] text-slate-400 mt-0.5">{sub}</p>
       </div>
       <div className="flex items-center gap-2.5">
+        <HealthBadge />
         <div className="relative hidden md:block">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input type="text" placeholder="Search anything…"
