@@ -15,8 +15,6 @@
     "declarationMap": true,
     "sourceMap": true,
     "removeComments": false,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
   },
