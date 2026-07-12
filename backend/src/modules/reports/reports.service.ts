@@ -1,5 +1,5 @@
-import prisma from '../../lib/prisma';
-import { VehicleStatus, DriverStatus, TripStatus } from '@prisma/client';
+import prisma from '../../lib/prisma'
+import { VehicleStatus, DriverStatus, TripStatus } from '@prisma/client'
 
 export class ReportsService {
   static async getDashboardKPIs() {
@@ -23,11 +23,10 @@ export class ReportsService {
           status: { in: [DriverStatus.available, DriverStatus.on_trip] },
         },
       }),
-    ]);
+    ])
 
-    const fleetUtilization = totalVehicles > 0 
-      ? Math.round((activeVehicles / totalVehicles) * 100) 
-      : 0;
+    const fleetUtilization =
+      totalVehicles > 0 ? Math.round((activeVehicles / totalVehicles) * 100) : 0
 
     return {
       activeVehicles,
@@ -37,7 +36,7 @@ export class ReportsService {
       pendingTrips,
       driversOnDuty,
       fleetUtilization,
-    };
+    }
   }
 
   static async getVehicleMetrics() {
@@ -50,27 +49,30 @@ export class ReportsService {
           where: { status: TripStatus.completed },
         },
       },
-    });
+    })
 
     return vehicles.map((vehicle) => {
-      const fuelCost = vehicle.fuelLogs.reduce((sum, log) => sum + log.cost, 0);
-      const maintenanceCost = vehicle.maintenances.reduce((sum, log) => sum + log.cost, 0);
-      const miscExpense = vehicle.expenses.reduce((sum, exp) => sum + exp.amount, 0);
-      const totalOpCost = fuelCost + maintenanceCost + miscExpense;
+      const fuelCost = vehicle.fuelLogs.reduce((sum, log) => sum + log.cost, 0)
+      const maintenanceCost = vehicle.maintenances.reduce((sum, log) => sum + log.cost, 0)
+      const miscExpense = vehicle.expenses.reduce((sum, exp) => sum + exp.amount, 0)
+      const totalOpCost = fuelCost + maintenanceCost + miscExpense
 
-      const revenue = vehicle.trips.reduce((sum, trip) => sum + (trip.revenue || 0), 0);
-      const totalDistance = vehicle.trips.reduce((sum, trip) => sum + trip.plannedDistance, 0);
-      const totalFuelConsumed = vehicle.trips.reduce((sum, trip) => sum + (trip.fuelConsumed || 0), 0);
+      const revenue = vehicle.trips.reduce((sum, trip) => sum + (trip.revenue || 0), 0)
+      const totalDistance = vehicle.trips.reduce((sum, trip) => sum + trip.plannedDistance, 0)
+      const totalFuelConsumed = vehicle.trips.reduce(
+        (sum, trip) => sum + (trip.fuelConsumed || 0),
+        0,
+      )
 
       // Distance / Fuel
-      const fuelEfficiency = totalFuelConsumed > 0 
-        ? parseFloat((totalDistance / totalFuelConsumed).toFixed(2)) 
-        : 0;
+      const fuelEfficiency =
+        totalFuelConsumed > 0 ? parseFloat((totalDistance / totalFuelConsumed).toFixed(2)) : 0
 
       // ROI: (Revenue - OpCost) / AcquisitionCost
-      const roi = vehicle.acquisitionCost > 0
-        ? parseFloat(((revenue - totalOpCost) / vehicle.acquisitionCost).toFixed(4))
-        : 0;
+      const roi =
+        vehicle.acquisitionCost > 0
+          ? parseFloat(((revenue - totalOpCost) / vehicle.acquisitionCost).toFixed(4))
+          : 0
 
       return {
         id: vehicle.id,
@@ -85,20 +87,21 @@ export class ReportsService {
         totalOperationalCost: totalOpCost,
         fuelEfficiency, // km per liter
         roi, // decimal percentage
-      };
-    });
+      }
+    })
   }
 
   static async generateCSVReport() {
-    const metrics = await this.getVehicleMetrics();
-    
-    // Header
-    let csv = 'Registration Number,Name/Model,Status,Acquisition Cost,Total Revenue,Operational Cost,Fuel Efficiency (km/L),ROI\n';
-    
-    metrics.forEach((m) => {
-      csv += `"${m.registrationNumber}","${m.nameModel}","${m.status}",${m.acquisitionCost},${m.totalRevenue},${m.totalOperationalCost},${m.fuelEfficiency},${(m.roi * 100).toFixed(2)}%\n`;
-    });
+    const metrics = await this.getVehicleMetrics()
 
-    return csv;
+    // Header
+    let csv =
+      'Registration Number,Name/Model,Status,Acquisition Cost,Total Revenue,Operational Cost,Fuel Efficiency (km/L),ROI\n'
+
+    metrics.forEach((m) => {
+      csv += `"${m.registrationNumber}","${m.nameModel}","${m.status}",${m.acquisitionCost},${m.totalRevenue},${m.totalOperationalCost},${m.fuelEfficiency},${(m.roi * 100).toFixed(2)}%\n`
+    })
+
+    return csv
   }
 }
