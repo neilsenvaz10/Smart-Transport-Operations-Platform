@@ -761,7 +761,7 @@ function DashboardScreen() {
                         <span className="truncate max-w-[80px]">{t.destination}</span>
                       </div>
                     </TD>
-                    <TD><span className="text-[12px] text-slate-700">{t.driver}</span></TD>
+                    <TD><span className="text-[12px] text-slate-700">{t.driver?.name || t.driverName || (typeof t.driver === "string" ? t.driver : "")}</span></TD>
                     <TD><span className="text-[12px] text-slate-500">{t.cargo}</span></TD>
                     <TD><StatusBadge status={t.status} /></TD>
                     <TD><span className="text-[12px] font-semibold text-slate-900">{typeof t.cost === "number" ? `$${t.cost.toLocaleString()}` : t.cost}</span></TD>
@@ -1517,7 +1517,7 @@ function DispatchScreen() {
                       </div>
                     </TD>
                     <TD><span className="text-[12px] text-slate-700">{t.vehicle?.nameModel || t.vehicle?.registrationNumber || t.vehicle}</span></TD>
-                    <TD><span className="text-[12px] text-slate-700">{t.driver?.name || t.driver}</span></TD>
+                    <TD><span className="text-[12px] text-slate-700">{t.driver?.name || t.driverName || (typeof t.driver === "string" ? t.driver : "")}</span></TD>
                     <TD><span className="text-[12px] text-slate-500">{t.cargo || "General"}</span></TD>
                     <TD><span className="text-[12px] text-slate-600 tabular-nums">{t.weight || `${t.cargoWeight} kg`}</span></TD>
                     <TD><StatusBadge status={t.status} /></TD>
