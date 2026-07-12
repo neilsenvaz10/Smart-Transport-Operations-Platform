@@ -1,0 +1,704 @@
+<USER_REQUEST>
+Here are my project documents: PRD, TRD, App Flow, UI/UX Brief, Backend Schema, and Implementation Plan.
+
+### 1. App Name & Tagline
+
+**TransitOps** — *Run your fleet, not your spreadsheets.*
+
+### 2. Problem Statement
+
+Logistics and transport companies commonly manage fleets, drivers, dispatch, and expenses through spreadsheets and paper logbooks. This manual approach leads to double-booked vehicles, drivers being assigned with expired licenses, missed maintenance windows, inaccurate cost tracking, and no real-time visibility into fleet health or utilization. TransitOps solves this for small-to-mid-sized transport and logistics operators who need a single source of truth for their vehicles, drivers, trips, and costs — without the overhead of enterprise fleet software.
+
+### 3. Target User Persona
+
+The primary user is a **Fleet Manager** at a small-to-mid-size logistics or transport company, responsible for keeping vehicles on the road, drivers compliant, and costs under control. They are not deeply technical, juggle multiple spreadsheets and phone calls daily, and need a fast way to see what’s available, what’s broken, and what’s compliant — without hunting through paperwork.
+
+### 4. Core Value Proposition
+
+Unlike generic fleet-management suites that are expensive, over-engineered, or built for large enterprise logistics, TransitOps focuses on **enforced business logic over passive record-keeping**. The system doesn’t just store data — it actively prevents invalid states (overloaded cargo, expired-license dispatch, double-booked vehicles) through automatic status transitions, so operational rules are enforced by the platform itself rather than relying on manual diligence.
+
+### 5. Core Features (Must Have)
+
+#### Authentication & Access
+
+- Email/password login
+- Role-Based Access Control: Fleet Manager, Driver, Safety Officer, Financial Analyst
+
+#### Dashboard
+
+- KPIs: Active Vehicles, Available Vehicles, Vehicles in Maintenance, Active Trips, Pending Trips, Drivers On Duty, Fleet Utilization (%)
+- Basic filters by vehicle type, status, region
+
+#### Vehicle Registry
+
+- CRUD for vehicles: unique Registration Number, Name/Model, Type, Max Load Capacity, Odometer, Acquisition Cost, Status
+- Status values: Available, On Trip, In Shop, Retired
+
+#### Driver Management
+
+- CRUD for drivers: Name, License Number, License Category, License Expiry Date, Contact Number, Safety Score, Status
+- Status values: Available, On Trip, Off Duty, Suspended
+
+#### Trip Management
+
+- Create trip: source, destination, available vehicle, available driver, cargo weight, planned distance
+- Lifecycle: Draft → Dispatched → Completed → Cancelled
+- Enforced validations (see Business Rules below)
+
+#### Maintenance Workflow
+
+- Create maintenance records tied to a vehicle
+- Active maintenance record auto-sets vehicle to “In Shop” and removes it from dispatch pool
+- Closing maintenance restores vehicle to Available (unless Retired)
+
+#### Fuel & Expense Tracking
+
+- Log fuel entries (liters, cost, date)
+- Log other expenses (tolls, misc. maintenance costs)
+- Auto-computed total operational cost per vehicle (Fuel + Maintenance)
+
+#### Reports & Analytics
+
+- Fuel Efficiency (Distance/Fuel)
+- Fleet Utilization
+- Operational Cost per vehicle
+- Vehicle ROI: (Revenue − (Maintenance + Fuel)) / Acquisition Cost
+- CSV export
+
+#### Enforced Business Rules
+
+- Vehicle registration numbers must be unique
+- Retired or In Shop vehicles never appear in dispatch selection
+- Drivers with expired licenses or Suspended status cannot be assigned
+- A vehicle/driver already On Trip cannot be double-assigned
+- Cargo weight cannot exceed vehicle max load capacity
+- Dispatch auto-sets vehicle + driver to On Trip
+- Completion auto-restores vehicle + driver to Available
+- Cancelling a dispatched trip restores vehicle + driver to Available
+- Creating active maintenance auto-sets vehicle to In Shop
+
+### 6. Nice to Have Features (v2+)
+
+- Charts and visual analytics on the dashboard
+- PDF export for reports
+- Email reminders for expiring driver licenses
+- Vehicle document management (insurance, registration papers, etc.)
+- Advanced search, filters, and sorting across all modules
+- Dark mode
+- Multi-region/multi-depot support
+- Driver mobile app for trip updates from the field
+
+### 7. Out of Scope (v1)
+
+- Real-time GPS tracking or live vehicle location
+- Route optimization or automated dispatch suggestions
+- Payroll or driver payment processing
+- Customer-facing tracking portal
+- Native mobile apps (web-responsive only in v1)
+- Integration with third-party fuel cards or telematics hardware
+- Multi-tenant/white-label support for multiple companies
+
+### 8. User Stories
+
+**Fleet Manager**
+
+- As a Fleet Manager, I want to register a new vehicle with its capacity and cost details so that it becomes available for dispatch.
+- As a Fleet Manager, I want to view real-time KPIs on my dashboard so that I can quickly assess fleet health and utilization.
+- As a Fleet Manager, I want to log a maintenance record for a vehicle so that it’s automatically removed from the dispatch pool until repairs are done.
+
+**Driver (Dispatcher role)**
+
+- As a Driver/Dispatcher, I want to create a trip by selecting an available vehicle and driver so that I can schedule deliveries without conflicts.
+- As a Driver/Dispatcher, I want the system to block cargo weight that exceeds vehicle capacity so that I don’t create unsafe or invalid trips.
+- As a Driver/Dispatcher, I want to mark a trip complete so that the vehicle and driver become available again automatically.
+
+**Safety Officer**
+
+- As a Safety Officer, I want the system to block assignment of drivers with expired licenses so that we stay compliant with safety regulations.
+- As a Safety Officer, I want to view driver safety scores and statuses so that I can monitor compliance across the fleet.
+
+**Financial Analyst**
+
+- As a Financial Analyst, I want to see total operational cost per vehicle (fuel + maintenance) so that I can track spending accurately.
+- As a Financial Analyst, I want to export cost and utilization reports to CSV so that I can analyze them further offline.
+- As a Financial Analyst, I want to view Vehicle ROI so that I can identify underperforming assets.
+
+### 9. Success Metrics
+
+- **Adoption**: % of fleet vehicles and drivers actively registered in the system within 30 days of launch
+- **Data integrity**: Zero double-bookings or invalid dispatches (expired license, overloaded cargo) post-launch
+- **Operational efficiency**: Measurable increase in Fleet Utilization (%) reported on the dashboard over baseline
+- **Maintenance compliance**: Reduction in overdue/missed maintenance events vs. pre-TransitOps baseline
+- **Time savings**: Reduction in time Fleet Managers spend on manual reporting (e.g., replacing spreadsheet reconciliation with dashboard/CSV export)
+- **Cost visibility**: 100% of vehicle operational costs (fuel + maintenance) reflected accurately and in real time
+
+### 1. Frontend
+
+- **Framework:** React (Vite, not Next.js) — this is a data-heavy CRUD dashboard, not content/SEO-driven, so Vite’s simpler build and faster dev cycle is a better fit for an 8-hour build than Next.js’s SSR overhead.
+- **Language:** TypeScript — catches shape mismatches early across Vehicles/Drivers/Trips entities, which matters given how many status-transition rules depend on correct data shapes.
+- **Key libraries:**
+    - **React Router** — multi-page navigation (Dashboard, Vehicles, Drivers, Trips, Maintenance, Reports)
+    - **TanStack Query (React Query)** — server state, caching, refetch-on-mutation (important since dispatch/complete/cancel actions change status across multiple entities)
+    - **React Hook Form + Zod** — form validation (cargo weight ≤ capacity, required fields) with shared schema types
+    - **Tailwind CSS** — fast, consistent styling for a responsive layout without hand-rolled CSS
+    - **Recharts** — only if dashboard charts are pulled forward from v2; otherwise omit for v1
+    - **Axios or native fetch** — API calls (either is fine; fetch avoids an extra dependency)
+
+### 2. Backend
+
+- **Framework/Runtime:** Node.js with Express (TypeScript)
+- **Reasoning:** The core complexity here is business-rule enforcement (status transitions, validation chains) rather than heavy compute — Express is minimal, well-understood, and fast to scaffold in a time-boxed build. NestJS was considered (better structure for larger teams) but adds boilerplate this PRD’s scope doesn’t need.
+
+### 3. Database
+
+- **Type:** Relational (SQL)
+- **Provider:** PostgreSQL (via Supabase or Neon)
+- **Reasoning — SQL vs NoSQL:**
+    - **SQL (recommended):** The domain is inherently relational — Vehicles ↔︎ Trips ↔︎ Drivers ↔︎ Maintenance ↔︎ Fuel Logs all reference each other, and business rules (uniqueness, status consistency, no double-assignment) map naturally to foreign keys, unique constraints, and transactions.
+    - **NoSQL (alternative):** Would work if the schema were expected to change shape often or scale horizontally — not the case here.
+    - **Recommendation:** PostgreSQL — strong relational integrity for status/assignment rules, and free-tier hosting (Supabase/Neon) is readily available.
+- **ORM:** Prisma — type-safe queries, easy migrations, and schema-as-code fits the entity list in the PRD directly.
+
+### 4. Authentication
+
+- **Method:** Email + password with JWT session tokens
+- **Provider options:**
+    - **Supabase Auth (recommended)** — if using Supabase for the DB, auth comes bundled, includes RBAC-friendly row-level policies, and is free tier.
+    - **Custom (bcrypt + jsonwebtoken)** — alternative if avoiding vendor lock-in; more setup work for the same outcome.
+- **Recommendation:** Supabase Auth — pairs with the DB choice, removes the need to hand-roll password hashing/session handling, and ships RBAC faster.
+- **RBAC implementation:** `role` field on the Users table (Fleet Manager, Driver, Safety Officer, Financial Analyst); backend middleware checks role per route/action.
+
+### 5. Hosting & Deployment
+
+- **Frontend:** Vercel (free tier) — zero-config for Vite/React, instant preview deployments
+- **Backend:** Render (free tier) — simplest free option for a persistent Node/Express server; Railway is a reasonable alternative
+- **Database:** Supabase (free tier) — bundles Postgres + Auth in one provider, reducing integration surface area for a time-boxed build
+
+### 6. Third-Party APIs / Services
+
+| Service | Purpose | Tier |
+| --- | --- | --- |
+| Supabase | Database (Postgres) + Auth | Free tier (sufficient for v1 scale) |
+| Vercel | Frontend hosting | Free tier |
+| Render | Backend hosting | Free tier (note: free tier spins down on inactivity — acceptable for v1/demo, revisit for production) |
+| — | No email service needed in v1 (license reminders are v2) | — |
+| — | No maps/GPS API needed in v1 (out of scope per PRD) | — |
+
+No other third-party services are required — the PRD’s v1 scope (CRUD + business rules + CSV export) doesn’t need payment processors, mapping APIs, or SMS/email providers.
+
+### 7. Folder Structure & Naming Conventions
+
+```
+transitops/
+├── frontend/
+│   ├── src/
+│   │   ├── components/       # shared UI (buttons, tables, modals)
+│   │   ├── pages/             # Dashboard, Vehicles, Drivers, Trips, Maintenance, Reports
+│   │   ├── features/          # feature-scoped logic (vehicles/, drivers/, trips/, maintenance/)
+│   │   │   └── vehicles/
+│   │   │       ├── api.ts
+│   │   │       ├── types.ts
+│   │   │       └── VehicleForm.tsx
+│   │   ├── hooks/
+│   │   ├── lib/                # axios instance, query client, utils
+│   │   ├── routes/
+│   │   └── App.tsx
+│   └── package.json
+├── backend/
+│   ├── src/
+│   │   ├── modules/
+│   │   │   ├── vehicles/
+│   │   │   │   ├── vehicle.controller.ts
+│   │   │   │   ├── vehicle.service.ts
+│   │   │   │   └── vehicle.routes.ts
+│   │   │   ├── drivers/
+│   │   │   ├── trips/
+│   │   │   ├── maintenance/
+│   │   │   └── reports/
+│   │   ├── middleware/         # auth.ts, rbac.ts, errorHandler.ts
+│   │   ├── prisma/
+│   │   │   └── schema.prisma
+│   │   ├── lib/
+│   │   └── index.ts
+│   └── package.json
+└── README.md
+```
+
+- **Naming:** `camelCase` for variables/functions, `PascalCase` for components/classes, `kebab-case` for file names in frontend routes, singular model names in Prisma schema (`Vehicle`, `Trip`) with plural table names by convention.
+
+### 8. Environment Variables Needed
+
+**Backend**
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `PORT`
+- `NODE_ENV`
+
+**Frontend**
+
+- `VITE_API_BASE_URL`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+### 9. Constraints
+
+- **Must run on free tier** — Vercel + Render + Supabase all have usable free tiers for v1/demo purposes.
+- **Must be web-responsive** — no native mobile app in v1 per PRD; layout must work on tablet/phone widths.
+- **Must enforce business rules server-side, not just in the UI** — validations (cargo weight, license expiry, status conflicts) must be re-checked in the backend regardless of frontend state, since frontend-only checks can be bypassed via direct API calls.
+- **No real-time/GPS features** — explicitly out of scope; no websocket or live-location infrastructure needed.
+- **Single-tenant only** — no multi-company/white-label support required, simplifying the data model (no `organization_id` scoping needed in v1).
+- **CSV export required, PDF optional** — backend should generate CSV natively (e.g. simple string building or a lightweight library); no PDF-generation service needed for v1.
+
+### 1. Full Page/Screen List
+
+| Screen | Description |
+| --- | --- |
+| **Login** | Email/password form; entry point for all returning users |
+| **Signup** | Create account with email/password; assigns initial role (or pending role assignment) |
+| **Dashboard** | KPI cards (Active Vehicles, Available Vehicles, In Maintenance, Active Trips, Pending Trips, Drivers On Duty, Fleet Utilization %) + filters by vehicle type, status, region |
+| **Vehicle Registry (List)** | Table of all vehicles with status, type, capacity; search/filter entry point |
+| **Vehicle Detail / Edit** | Single vehicle’s full record, editable fields, linked maintenance/fuel history |
+| **Add Vehicle** | Form to register a new vehicle (Reg. Number, Name/Model, Type, Max Load, Odometer, Acquisition Cost) |
+| **Driver Management (List)** | Table of all drivers with status, license expiry, safety score |
+| **Driver Detail / Edit** | Single driver’s full record, editable fields |
+| **Add Driver** | Form to register a new driver |
+| **Trip Management (List)** | Table of trips filterable by status (Draft, Dispatched, Completed, Cancelled) |
+| **Create Trip** | Form: source, destination, vehicle (available only), driver (available only), cargo weight, planned distance |
+| **Trip Detail** | Single trip view with lifecycle actions (Dispatch, Complete, Cancel) |
+| **Maintenance (List)** | Table of maintenance records, active and closed |
+| **Add/Edit Maintenance Record** | Form to log maintenance against a vehicle; open/close toggle |
+| **Fuel & Expense Log (List)** | Table of fuel entries and expenses, filterable by vehicle |
+| **Add Fuel/Expense Entry** | Form to log fuel (liters, cost, date) or other expense (tolls, etc.) |
+| **Reports & Analytics** | Fuel Efficiency, Fleet Utilization, Operational Cost, Vehicle ROI views + CSV export |
+| **Access Denied / 403** | Shown when a role attempts an action outside its permissions |
+| **404 / Not Found** | Shown for invalid routes or deleted records |
+
+**Not included** (per PRD Out of Scope / Nice-to-Have): onboarding wizard, document upload screen, dark mode toggle screen, license-reminder settings — these are v2+ and intentionally excluded here.
+
+### 2. Navigation Structure
+
+- **Primary nav:** Left sidebar (persistent on desktop, collapsible/hamburger on mobile) — matches the “responsive web interface” requirement in the PRD.
+- **Sidebar items:** Dashboard, Vehicles, Drivers, Trips, Maintenance, Fuel & Expenses, Reports — **visibility of each item is role-gated** (e.g., Financial Analyst may see Reports + read-only Fuel/Expenses but not Add Vehicle; Driver may see Trips prominently but not Reports).
+- **Top bar:** Current user name/role, logout action.
+- **List → Detail pattern:** Every list screen (Vehicles, Drivers, Trips, Maintenance) drills into a Detail screen via row click; Detail screens have a back-to-list action, not a separate nav item.
+- **No tabs/bottom nav** — sidebar is sufficient for this screen count and matches typical fleet-management dashboard conventions.
+
+### 3. Entry Point
+
+A brand-new visitor lands on **Login**. There is no public marketing/landing page in v1 scope (PRD doesn’t call for one — this is an internal operations tool, not a public product). If a visitor has no account, they use a **Signup** link from the Login screen.
+
+**Edge case to decide now:** Does Signup create accounts freely (self-serve), or is TransitOps invite-only (Fleet Manager creates accounts for Drivers/Safety Officers/Financial Analysts)? The PRD doesn’t specify. For an internal ops tool, invite-only is more realistic and safer (prevents unauthorized signups claiming a role). **Recommendation: invite-only signup, admin/Fleet Manager assigns role at creation.** This needs a decision before build, since it changes whether “Signup” is a public screen at all.
+
+### 4. Auth Flow
+
+**Assuming invite-only (recommended):**
+
+```
+Fleet Manager creates user (name, email, role)  → System sends credential/invite (out of scope: email service — see note below)  → New user logs in via Login screen with provided credentials  → Redirect to Dashboard (filtered/scoped to their role)
+```
+
+**Assuming self-serve signup (alternative):**
+
+```
+Signup (email, password, role selection)  → Immediate login (no email verification in v1 — no email service is in the TRD's service list)  → Redirect to Dashboard
+```
+
+**Unhandled edge case:** The TRD explicitly lists no email service for v1, meaning there’s no email verification and no invite-email delivery mechanism. If invite-only is chosen, you need a manual/admin-side way to communicate credentials (e.g., Fleet Manager sets a temporary password and tells the user directly) — this needs to be decided before build, or self-serve signup becomes the only viable option without adding an email service.
+
+### 5. Core User Journeys
+
+#### Journey 1 — Fleet Manager registers a vehicle and dispatches a trip
+
+User wants to get a new vehicle into service and assign it to a trip.
+
+1. User goes to **Dashboard**, clicks “Vehicles” in sidebar.
+2. Lands on **Vehicle Registry (List)**, clicks “Add Vehicle.”
+3. Fills out **Add Vehicle** form (Reg. Number, Model, Type, Max Load, Odometer, Acquisition Cost) → Submit.
+4. System validates Reg. Number uniqueness → Vehicle saved with Status = Available → redirected to **Vehicle Registry (List)**, new vehicle visible.
+5. User clicks “Trips” in sidebar → **Trip Management (List)** → “Create Trip.”
+6. On **Create Trip**, user selects source, destination, the new vehicle (shown because it’s Available), an available driver, cargo weight, planned distance → Submit.
+7. System validates cargo weight ≤ max load capacity → Trip created in **Draft** status → redirected to **Trip Detail**.
+8. User clicks “Dispatch” on **Trip Detail** → system sets Trip status to Dispatched, Vehicle and Driver both auto-update to On Trip → **Trip Detail** refreshes showing updated statuses.
+
+#### Journey 2 — Completing a trip and logging fuel
+
+User wants to close out a finished trip and record fuel usage.
+
+1. User goes to **Trip Management (List)**, filters by “Dispatched,” clicks the relevant trip → **Trip Detail**.
+2. Clicks “Complete Trip,” enters final odometer and fuel consumed (per PRD Example Workflow Step 6).
+3. System sets Trip status to Completed, Vehicle and Driver both auto-revert to Available → **Trip Detail** shows Completed state.
+4. User navigates to **Fuel & Expense Log**, clicks “Add Fuel/Expense Entry.”
+5. Selects the vehicle, enters liters/cost/date → Submit → redirected to **Fuel & Expense Log (List)**, entry visible, vehicle’s total operational cost recalculated.
+
+#### Journey 3 — Safety Officer checks compliance before a dispatch fails
+
+User wants to understand why a driver couldn’t be assigned to a trip.
+
+1. User (Driver/Dispatcher role) goes to **Create Trip**, selects a driver whose license has expired.
+2. System blocks selection/submission with a validation error (per Mandatory Business Rules) — user stays on **Create Trip** with an inline error message, trip is not created.
+3. User goes to **Driver Management (List)**, filters by Status, opens the driver’s **Driver Detail**, sees License Expiry Date flagged.
+4. Safety Officer (separate role) accesses the same **Driver Detail** screen to update the driver’s status to Suspended or update license info once renewed.
+
+**Unhandled edge case:** What happens to a trip already in Draft status if the selected driver’s license expires between trip creation and dispatch? The PRD’s rules are written for assignment-time validation — does the system also re-validate at dispatch time? **Recommendation: re-validate at dispatch, not just at creation**, since Draft trips could sit for a while. Decide this before build.
+
+### 6. Empty States
+
+| Screen | Empty State |
+| --- | --- |
+| **Dashboard** | KPI cards show 0 / — with a message like “No fleet data yet — add your first vehicle and driver to get started,” with direct links to Add Vehicle / Add Driver |
+| **Vehicle Registry (List)** | “No vehicles registered yet” + prominent “Add Vehicle” button |
+| **Driver Management (List)** | “No drivers registered yet” + prominent “Add Driver” button |
+| **Trip Management (List)** | “No trips created yet” + “Create Trip” button (disabled/hinted if no available vehicles or drivers exist yet) |
+| **Maintenance (List)** | “No maintenance records” + “Add Maintenance Record” button |
+| **Fuel & Expense Log** | “No fuel or expense entries logged yet” + “Add Entry” button |
+| **Reports & Analytics** | “Not enough data to generate reports yet” (e.g., ROI needs Revenue + Acquisition Cost + at least one completed trip/fuel log) |
+
+**Edge case to flag:** Trip creation depends on at least one Available vehicle and one Available driver existing. If either list is empty, **Create Trip** should disable submission with a clear message rather than allowing a broken form state — this should be an explicit guard, not just a validation error after the fact.
+
+### 7. Error States
+
+| Scenario | Behavior |
+| --- | --- |
+| **Network/API failure** (any form submit) | Inline error banner on the same screen (“Something went wrong — please try again”), form data preserved, no redirect |
+| **Duplicate Reg. Number** | Inline field-level error on Add/Edit Vehicle: “This registration number is already in use” |
+| **Cargo weight exceeds capacity** | Inline field-level error on Create Trip, blocks submission |
+| **Assigning unavailable/suspended driver or vehicle** | Inline error on Create Trip; unavailable options should also be excluded from the dropdown itself (not just caught on submit) |
+| **Unauthorized action** (role lacks permission) | Redirect to **Access Denied / 403** screen, with a link back to Dashboard |
+| **Invalid/expired session** | Redirect to **Login** with message “Session expired, please log in again” |
+| **Invalid route / deleted record accessed via stale link** | Redirect to **404 / Not Found**, with link back to the relevant list screen |
+
+**Unhandled edge case:** What happens if a Fleet Manager tries to delete or retire a vehicle that’s currently On Trip? The PRD doesn’t define this. **Recommendation: block retirement/deletion while a vehicle is On Trip or In Shop**, and surface this as an inline error — decide and document this rule now, since it’s a data-integrity gap.
+
+### 8. Redirect Logic
+
+| Action | Redirect |
+| --- | --- |
+| After successful login | `/dashboard` |
+| After logout | `/login` |
+| After signup (if self-serve chosen) | `/dashboard` |
+| After Add Vehicle success | `/vehicles` (list, new entry visible) |
+| After Add Driver success | `/drivers` |
+| After Create Trip success | `/trips/:id` (Trip Detail, Draft status) |
+| After Dispatch/Complete/Cancel Trip | Stay on `/trips/:id` (refreshed state, no navigation away) |
+| After Add Maintenance Record | `/maintenance` (list) |
+| After Close Maintenance | Stay on `/maintenance/:id`, vehicle status reflected as Available |
+| After Add Fuel/Expense Entry | `/fuel-expenses` (list) |
+| After unauthorized action attempt | `/403` |
+| After session expiry | `/login` |
+| After accessing deleted/invalid record | `/404` |
+
+---
+
+### Summary of Decisions Needed Before Build
+
+1. **Signup model:** invite-only (recommended) vs. self-serve — affects whether a public Signup screen exists at all.
+2. **Credential delivery:** since no email service is in scope, how are invite-only credentials communicated to new users?
+3. **Dispatch-time re-validation:** should driver license/status be re-checked at dispatch, not just at trip creation?
+4. **Deletion/retirement guard:** vehicles/drivers currently On Trip or In Shop — should deletion/retirement be blocked?
+5. **Empty-dependency guard:** should Create Trip be disabled outright (not just validated) when no Available vehicles or drivers exist?
+
+### 1. Overall Aesthetic
+
+Clean, data-dense, and utilitarian — a professional operations dashboard that prioritizes scannability over decoration, in the spirit of Linear or Notion rather than a marketing-forward consumer app.
+
+### 2. Color Palette
+
+**Primary (Dark mode — default):**
+
+- Background (base): `#0F1115`
+- Background (elevated/cards): `#171A21`
+- Primary accent: `#3B82F6` (blue — used for primary actions, active nav state)
+- Text (primary): `#E5E7EB`
+- Text (secondary/muted): `#9CA3AF`
+- Border/divider: `#2A2E37`
+
+**Status colors (used consistently across Vehicle/Driver/Trip status badges):**
+
+- Available / Success: `#22C55E`
+- On Trip / In Progress: `#3B82F6`
+- In Shop / Warning: `#F59E0B`
+- Retired / Suspended / Error: `#EF4444`
+- Draft / Neutral: `#6B7280`
+
+**Light mode (secondary):**
+
+- Background: `#FFFFFF`
+- Elevated surface: `#F9FAFB`
+- Text (primary): `#111827`
+- Text (secondary): `#6B7280`
+- Border: `#E5E7EB`
+- Accent stays the same blue for continuity: `#3B82F6`
+
+### 3. Typography
+
+- **UI font:** Inter (or system-ui stack as fallback) — highly legible at small sizes, standard for dashboard UIs, free.
+- **Headings:**
+    - Page title (e.g., “Vehicle Registry”): 24px / semi-bold
+    - Section header (e.g., card group titles): 16px / semi-bold
+- **Body/UI text:** 14px / regular — this is the dominant size across tables, forms, and labels
+- **Small/meta text** (timestamps, helper text, table secondary info): 12px / regular, muted color
+- **Numeric/KPI figures on Dashboard:** 32px / bold — these need to be scannable at a glance
+
+### 4. Component Style
+
+- **Corner radius:** 8px on cards, inputs, and buttons; 6px on small elements (badges, chips) — consistent, moderate rounding, not sharp/boxy and not overly soft
+- **Shadow style:** Flat, not elevated — rely on subtle border + background contrast between elevated surface and base background rather than drop shadows. This matches the Linear/Notion direction and avoids visual noise across dense tables.
+- **Spacing density:** Compact-to-comfortable — tables and lists should favor information density (fleet managers scan many rows), but forms and detail views get more breathing room (16–24px padding) since those are read/edit-focused rather than scan-focused.
+
+### 5. Dark/Light Mode
+
+- **Primary:** Dark mode — this fits the aesthetic direction and the tool’s likely usage context (ops staff, dispatch desks, extended screen time).
+- **Light mode:** Explicitly listed as a **Nice-to-Have (v2+)** in the PRD, not v1. **Design should still use semantic color tokens (not hardcoded hex in components) so light mode can be added later without a rebuild** — but only dark mode ships in v1.
+
+### 6. Key UI Patterns
+
+Based directly on the App Flow’s screen list, these patterns recur and should be built as shared, reusable components:
+
+- **Data tables** — the dominant pattern: Vehicle Registry, Driver Management, Trip Management, Maintenance List, Fuel & Expense Log all use the same table component (sortable columns, status badges, row-click-to-detail, filter bar above).
+- **Status badges** — small colored pill components for every status field (Vehicle, Driver, Trip, Maintenance) — one shared component, color-mapped per the palette above.
+- **KPI cards** — used only on Dashboard; large number + label + optional trend indicator, laid out in a responsive grid.
+- **Forms (modal or full-page)** — Add Vehicle, Add Driver, Create Trip, Add Maintenance Record, Add Fuel/Expense Entry. Recommend **modal forms for quick-add actions** (Add Fuel Entry, Add Maintenance) and **full-page forms for multi-field/primary entities** (Add Vehicle, Add Driver, Create Trip) to avoid cramming complex validation (like cargo weight checks) into a small modal.
+- **Detail/edit panels** — Vehicle Detail, Driver Detail, Trip Detail — consistent layout: header with status badge + key actions (Dispatch/Complete/Cancel, Edit), followed by field sections, followed by related records (e.g., a vehicle’s maintenance/fuel history).
+- **Sidebar navigation** — persistent left sidebar per the App Flow’s Navigation Structure, with role-based item visibility.
+- **Inline validation/error banners** — consistent placement (top of form or inline under field) per the App Flow’s Error States section — no toast-only errors for form validation, since users need to see exactly which field failed.
+- **Empty states** — consistent pattern across all list screens: icon/illustration-free (keep it simple), one line of copy, one primary CTA button — matching the App Flow’s Empty States table.
+
+### 7. Reference Apps
+
+- **Linear** — for the dark, minimal aesthetic, flat component style, and dense-but-clean table/list views.
+- **Notion** — for the calm neutral palette and moderate corner radius/spacing rhythm.
+- **Samsara or Fleetio** (fleet-management specific) — for validating that table-heavy, status-badge-driven patterns are the right domain fit, even though the visual polish here should exceed typical legacy fleet software.
+
+### 8. Mobile Responsiveness
+
+- **Navigation:** Sidebar collapses into a hamburger-triggered slide-over menu on small screens, per the App Flow’s Navigation Structure.
+- **Tables:** On narrow viewports, tables shift to a **stacked card layout** (each row becomes a compact card showing the 2-3 most important fields — e.g., Vehicle Name, Status, Reg. Number — with a “view details” tap target) rather than horizontal scrolling, which is hard to use on touch.
+- **Forms:** Full-width single-column fields on mobile (no side-by-side field pairs).
+- **Dashboard KPI cards:** Grid reflows from multi-column to single/double column stack.
+- **Detail screens:** Action buttons (Dispatch/Complete/Cancel) move to a sticky bottom bar on mobile for easy thumb access, rather than staying in the header.
+
+### 9. Accessibility Notes
+
+- **Contrast:** All text must meet WCAG AA minimum (4.5:1 for body text, 3:1 for large text/headings) — worth double-checking the muted gray (`#9CA3AF`) against the dark background (`#0F1115`), which should pass but should be verified with a contrast checker during implementation.
+- **Font size:** No body text below 12px; interactive elements (buttons, inputs) maintain a minimum 40px touch target height on mobile.
+- **Status indication:** Status badges should never rely on color alone — pair each color with a text label (e.g., “Available,” “In Shop”) since this is already the plan, which also helps colorblind users.
+- **Focus states:** All interactive elements (buttons, table rows, form fields) need a visible keyboard focus ring — important given how many actions (Dispatch, Complete, Cancel) are keyboard-triggerable in a data-entry-heavy tool.
+- **Form errors:** Inline errors should be associated with their fields via `aria-describedby` (or equivalent) so screen readers announce them, not just visually flagged in color.
+
+### 1. Tables
+
+#### `users`
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | UUID (PK) | Matches Supabase Auth user ID |
+| `email` | TEXT, unique, not null | Login identifier |
+| `full_name` | TEXT, not null |  |
+| `role` | ENUM (`fleet_manager`, `driver`, `safety_officer`, `financial_analyst`) | Not null |
+| `is_active` | BOOLEAN, default true | Supports disabling accounts without deleting (audit trail preservation) |
+| `created_at` | TIMESTAMPTZ, default now() |  |
+| `updated_at` | TIMESTAMPTZ |  |
+
+*No `password_hash` column needed if using Supabase Auth — it manages credentials in its own auth schema; this `users` table is a “profile” table joined via `id`.*
+
+#### `vehicles`
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | UUID (PK) |  |
+| `registration_number` | TEXT, unique, not null | Enforced uniqueness per PRD 3.3 |
+| `name_model` | TEXT, not null |  |
+| `type` | TEXT, not null | e.g., Truck, Van — free text or ENUM if types are fixed (see flag below) |
+| `max_load_capacity` | NUMERIC(10,2), not null | kg |
+| `odometer` | NUMERIC(10,2), default 0 |  |
+| `acquisition_cost` | NUMERIC(12,2), not null | Used in ROI calc |
+| `status` | ENUM (`available`, `on_trip`, `in_shop`, `retired`), default `available` |  |
+| `region` | TEXT, nullable | Supports Dashboard region filter (PRD 3.2) |
+| `created_at` | TIMESTAMPTZ |  |
+| `updated_at` | TIMESTAMPTZ |  |
+
+#### `drivers`
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | UUID (PK) |  |
+| `user_id` | UUID, nullable, FK → `users.id` | Links driver record to a login account, if the driver logs in themselves; nullable because some drivers may be tracked without system access |
+| `name` | TEXT, not null |  |
+| `license_number` | TEXT, unique, not null |  |
+| `license_category` | TEXT, not null |  |
+| `license_expiry_date` | DATE, not null | Core to compliance rule |
+| `contact_number` | TEXT, not null |  |
+| `safety_score` | NUMERIC(5,2), default 0 |  |
+| `status` | ENUM (`available`, `on_trip`, `off_duty`, `suspended`), default `available` |  |
+| `created_at` | TIMESTAMPTZ |  |
+| `updated_at` | TIMESTAMPTZ |  |
+
+#### `trips`
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | UUID (PK) |  |
+| `source` | TEXT, not null |  |
+| `destination` | TEXT, not null |  |
+| `vehicle_id` | UUID, FK → `vehicles.id`, not null |  |
+| `driver_id` | UUID, FK → `drivers.id`, not null |  |
+| `cargo_weight` | NUMERIC(10,2), not null | Validated ≤ vehicle.max_load_capacity at insert |
+| `planned_distance` | NUMERIC(10,2), not null |  |
+| `final_odometer` | NUMERIC(10,2), nullable | Filled on completion |
+| `fuel_consumed` | NUMERIC(10,2), nullable | Filled on completion |
+| `revenue` | NUMERIC(12,2), nullable | Needed for Vehicle ROI calc — **flagged below, PRD doesn’t explicitly define where Revenue comes from** |
+| `status` | ENUM (`draft`, `dispatched`, `completed`, `cancelled`), default `draft` |  |
+| `created_by` | UUID, FK → `users.id` | Audit: who created the trip |
+| `dispatched_at` | TIMESTAMPTZ, nullable |  |
+| `completed_at` | TIMESTAMPTZ, nullable |  |
+| `cancelled_at` | TIMESTAMPTZ, nullable |  |
+| `created_at` | TIMESTAMPTZ |  |
+| `updated_at` | TIMESTAMPTZ |  |
+
+#### `maintenance_logs`
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | UUID (PK) |  |
+| `vehicle_id` | UUID, FK → `vehicles.id`, not null |  |
+| `description` | TEXT, not null | e.g., “Oil Change” |
+| `cost` | NUMERIC(12,2), not null, default 0 | Feeds operational cost calc |
+| `status` | ENUM (`active`, `closed`), default `active` | Drives vehicle status side-effect |
+| `opened_at` | TIMESTAMPTZ, default now() |  |
+| `closed_at` | TIMESTAMPTZ, nullable |  |
+| `created_by` | UUID, FK → `users.id` |  |
+| `created_at` | TIMESTAMPTZ |  |
+
+#### `fuel_logs`
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | UUID (PK) |  |
+| `vehicle_id` | UUID, FK → `vehicles.id`, not null |  |
+| `trip_id` | UUID, nullable, FK → `trips.id` | Optional link if fuel entry is tied to a specific trip |
+| `liters` | NUMERIC(10,2), not null |  |
+| `cost` | NUMERIC(12,2), not null |  |
+| `log_date` | DATE, not null |  |
+| `created_by` | UUID, FK → `users.id` |  |
+| `created_at` | TIMESTAMPTZ |  |
+
+#### `expenses`
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | UUID (PK) |  |
+| `vehicle_id` | UUID, FK → `vehicles.id`, not null |  |
+| `type` | TEXT, not null | e.g., “Toll” — kept separate from `maintenance_logs.cost` per PRD 3.7 (“tolls or maintenance” as distinct categories) |
+| `amount` | NUMERIC(12,2), not null |  |
+| `expense_date` | DATE, not null |  |
+| `notes` | TEXT, nullable |  |
+| `created_by` | UUID, FK → `users.id` |  |
+| `created_at` | TIMESTAMPTZ |  |
+
+**Not created:** a separate `roles` table. The PRD’s roles are fixed and small in number (4), so a `role` ENUM column on `users` is simpler than a normalized roles table with a join table — normalizing would be overengineering for a fixed, small role set. **Flag:** if roles are ever expected to become dynamic/configurable (e.g., custom roles per company), this would need to change to a `roles` + `user_roles` join table — expensive to retrofit later, so worth confirming roles will stay fixed.
+
+### 2. Relationships
+
+- `users` 1 → many `drivers` (a driver *may* have a login account)
+- `users` 1 → many `trips`, `maintenance_logs`, `fuel_logs`, `expenses` (via `created_by`, for audit trail)
+- `vehicles` 1 → many `trips`
+- `drivers` 1 → many `trips`
+- `vehicles` 1 → many `maintenance_logs`
+- `vehicles` 1 → many `fuel_logs`
+- `vehicles` 1 → many `expenses`
+- `trips` 1 → many `fuel_logs` (optional link, a fuel log can exist independent of a trip)
+
+No many-to-many relationships exist in this schema — the domain is strictly hierarchical (Vehicle/Driver → Trip/Maintenance/Fuel/Expense), which matches the PRD’s entity list directly.
+
+### 3. Indexes
+
+| Table | Column(s) | Reason |
+| --- | --- | --- |
+| `vehicles` | `registration_number` | Unique constraint + frequent uniqueness checks on insert |
+| `vehicles` | `status` | Dashboard KPI counts and dispatch-pool filtering query this constantly |
+| `drivers` | `license_number` | Unique constraint |
+| `drivers` | `status`, `license_expiry_date` | Compliance checks and dispatch eligibility filter on both frequently (composite index recommended) |
+| `trips` | `status` | Trip list filter (Draft/Dispatched/Completed/Cancelled) is a primary UI view |
+| `trips` | `vehicle_id`, `driver_id` | Lookups for “is this vehicle/driver already on a trip” — critical for the no-double-assignment rule |
+| `maintenance_logs` | `vehicle_id`, `status` | Determines dispatch pool exclusion; queried on every vehicle status check |
+| `fuel_logs` | `vehicle_id` | Cost rollup per vehicle |
+| `expenses` | `vehicle_id` | Cost rollup per vehicle |
+
+**Flag:** Operational Cost and ROI reports aggregate across `fuel_logs`, `expenses`, and `maintenance_logs` per vehicle. At small scale this is fine as on-the-fly SUM queries with the indexes above. If the fleet grows large (thousands of vehicles, years of logs), consider a materialized/summary table later — not needed for v1, but flagging so it’s not a surprise refactor.
+
+### 4. Auth Model (Row Level Security, in plain language)
+
+Assuming Supabase Auth + Postgres RLS:
+
+- **`users`**: A user can read their own row. Only `fleet_manager` role can read/update all rows (to manage other users/roles) — no self-serve role changes.
+- **`vehicles`**: All authenticated roles can **read** all vehicles (everyone needs visibility for dispatch/reporting). Only `fleet_manager` can **create/update/delete** vehicles.
+- **`drivers`**: All authenticated roles can **read** all drivers. `fleet_manager` and `safety_officer` can **create/update** driver records (safety officer specifically needs to update status/suspension and safety score). No role can delete a driver with trip history (soft-handling recommended — see Sensitive Fields flag below).
+- **`trips`**: All authenticated roles can **read** all trips. `driver` role (acting as dispatcher per PRD) and `fleet_manager` can **create/update** trip lifecycle actions (dispatch/complete/cancel). `safety_officer` and `financial_analyst` are **read-only** on trips.
+- **`maintenance_logs`**: `fleet_manager` can **create/update/close**. All roles can **read**.
+- **`fuel_logs` / `expenses`**: `fleet_manager` and `driver` can **create** (logging fuel/expenses is often done at point of trip completion). `financial_analyst` is **read-only**. All roles can **read**.
+
+**Default posture:** every table denies access to unauthenticated requests entirely (RLS enabled, no anonymous policies) — this is the secure default and matches “Only authenticated users should access the application” from PRD 3.1.
+
+### 5. User Roles & Permissions
+
+| Role | Can | Cannot |
+| --- | --- | --- |
+| **Fleet Manager** | Full CRUD on Vehicles, Drivers, Maintenance; create/manage Trips; read all Reports; manage Users | Nothing restricted — effectively admin in v1 |
+| **Driver** (Dispatcher) | Create/dispatch/complete/cancel Trips; log Fuel/Expenses; read Vehicles/Drivers (to select for trips) | Cannot edit Vehicle/Driver master records; cannot access Reports/ROI; cannot manage Users |
+| **Safety Officer** | Read all Driver records; update Driver status/suspension/safety score/license info | Cannot create/edit Vehicles; cannot create Trips; cannot access financial Reports |
+| **Financial Analyst** | Read-only on Vehicles, Trips, Maintenance, Fuel, Expenses; access Reports & CSV export | Cannot create/edit/delete anything — fully read-only role |
+
+**Flag:** The PRD calls the “Driver” persona both a data entity (a person who drives) and, per the description, someone who “creates trips, assigns vehicles and drivers” — which reads more like a dispatcher function. This schema treats `users.role = driver` as the dispatcher-permission role, separate from the `drivers` table (which is the entity being assigned to trips). **This is worth confirming with stakeholders** — if actual drivers need their own restricted login (e.g., only viewing their own assigned trips), that’s a different permission model than what’s built here, and retrofitting per-driver row-level scoping later means adding a `driver_id` link check to every trip RLS policy.
+
+### 6. Sensitive Fields
+
+- **No payment card or bank data** exists in this schema — the PRD’s financial features are internal cost tracking (fuel, maintenance, tolls), not payment processing, so no PCI-scope concerns.
+- **`drivers.contact_number`** — personal contact info; not legally “sensitive” (like SSN/health data) but should still be treated as PII: restrict `SELECT` to roles that need it (Fleet Manager, Safety Officer) rather than exposing it in bulk to Financial Analyst’s read-only reporting queries — **recommend excluding this column from the Reports/CSV export data path** even though the Analyst role can read the drivers table generally.
+- **`drivers.license_number`** — semi-sensitive identifier; same treatment as contact number, avoid including in exported CSVs unless explicitly needed.
+- **No encryption-at-rest customization needed** — Supabase/Postgres provides disk-level encryption by default; no field-level application encryption is warranted for this data sensitivity level.
+
+### 7. File/Media Storage
+
+**Not applicable for v1.** The PRD’s “Vehicle document management” (insurance papers, registration documents) is explicitly listed under **Nice to Have (v2+)**, and the TRD confirms no file storage service is provisioned for v1. No `documents` or `attachments` table is created here to avoid speculative schema.
+
+**Flag for future:** when document management is added in v2, plan for a `vehicle_documents` table (`id`, `vehicle_id` FK, `file_url`, `file_type`, `uploaded_by`, `uploaded_at`) backed by Supabase Storage — worth knowing now that this will be a clean additive table, not a schema change to `vehicles` itself.
+
+### 8. API Endpoints (implied)
+
+```
+AuthPOST   /auth/loginPOST   /auth/logoutGET    /auth/meUsersGET    /users              (fleet_manager only)POST   /users               (fleet_manager only — creates account + role)PATCH  /users/:id           (fleet_manager only)VehiclesGET    /vehicles            (?status=&type=&region= filters)GET    /vehicles/:idPOST   /vehicles            (fleet_manager only)PATCH  /vehicles/:id        (fleet_manager only)DriversGET    /drivers             (?status= filter)GET    /drivers/:idPOST   /drivers             (fleet_manager, safety_officer)PATCH  /drivers/:id         (fleet_manager, safety_officer)TripsGET    /trips               (?status= filter)GET    /trips/:idPOST   /trips                       (draft creation)PATCH  /trips/:id/dispatch          (status → dispatched, side effects)PATCH  /trips/:id/complete          (status → completed, side effects)PATCH  /trips/:id/cancel            (status → cancelled, side effects)MaintenanceGET    /maintenance-logs    (?vehicle_id= filter)POST   /maintenance-logs    (fleet_manager only)PATCH  /maintenance-logs/:id/close  (fleet_manager only)Fuel & ExpensesGET    /fuel-logs           (?vehicle_id= filter)POST   /fuel-logsGET    /expenses            (?vehicle_id= filter)POST   /expensesReportsGET    /reports/fleet-utilizationGET    /reports/fuel-efficiencyGET    /reports/operational-costGET    /reports/vehicle-roiGET    /reports/export.csv
+```
+
+---
+
+### Summary of Flags Requiring a Decision
+
+1. **`trips.revenue`** — the PRD’s ROI formula needs Revenue, but no feature in the PRD defines where Revenue comes from (per-trip billing? external system? manual entry?). This needs a source before ROI reporting can actually work — right now it’s a nullable field with no defined input flow.
+2. **Fixed vs. dynamic roles** — current design assumes exactly 4 fixed roles forever (ENUM column). If roles need to become configurable later, this requires a schema migration to a normalized roles table.
+3. **Driver login scope** — clarify whether “Driver” (the dispatcher permission role) should eventually be scoped to see only their own assigned trips, since that changes the RLS policy shape.
+4. **Vehicle `type` as free text vs. ENUM** — currently free text for flexibility; if the Dashboard filter by “vehicle type” needs a fixed, known list, an ENUM (or a small `vehicle_types` lookup table) would be more query-safe and prevent typo-driven filter bugs.
+
+**Before Phase 1:** Four open decisions from prior documents affect build order and should be locked in now, since they change what gets built in Phases 3, 4, and 8:
+
+1. Signup model (invite-only vs. self-serve)
+2. Credential delivery method for invite-only (if chosen)
+3. Source of `trips.revenue` for ROI reporting
+4. Whether “Driver” role scope is dispatcher-wide or restricted to own trips
+
+This plan proceeds assuming the **recommended defaults**: invite-only signup with manual credential handoff, `revenue` as a manually-entered optional field on trip completion, and “Driver” as the dispatcher-wide role. Revisit Phase 3 and Phase 7 if you choose differently.
+
+---
+
+### Phase 1: Project Setup
+
+**Goal:** Establish the repo, tooling, and environment so every subsequent phase has a working foundation to build on.
+
+**Sub-tasks:**
+
+- Initialize monorepo structure (`frontend/`, `backend/`) per TRD fold
+<truncated 19592 bytes>
+
+NOTE: The output was truncated because it was too long. Use a more targeted query or a smaller range to get the information you need.
