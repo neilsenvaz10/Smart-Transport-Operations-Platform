@@ -4,7 +4,7 @@ import DashboardApp from './app/DashboardApp'
 import Login from './app/pages/Login'
 import ProtectedRoute from './app/components/ProtectedRoute'
 import { AuthProvider } from './lib/auth'
-import './styles/index.css'
+import './index.css'
 
 // ─── 404 Page ─────────────────────────────────────────────────────────────────
 
