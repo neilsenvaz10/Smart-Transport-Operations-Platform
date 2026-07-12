@@ -6,6 +6,10 @@ import {
   getDashboardKPIs,
   getVehicleReports,
   exportCSVReport,
+  getFuelEfficiency,
+  getFleetUtilization,
+  getOperationalCost,
+  getVehicleRoi,
 } from './reports.controller';
 
 const router = Router();
@@ -13,19 +17,43 @@ const router = Router();
 // Apply auth middleware
 router.use(authenticate);
 
-// Routes
-router.get('/kpis', getDashboardKPIs); // All authenticated roles can read KPIs
+// KPIs – all authenticated roles can read
+router.get('/kpis', getDashboardKPIs);
 
-// Reports are restricted to Fleet Managers and Financial Analysts
+// Full vehicle metrics – fleet_manager & financial_analyst only
 router.get(
   '/vehicles',
   authorize([Role.fleet_manager, Role.financial_analyst]),
   getVehicleReports
 );
+
+// CSV export
 router.get(
-  '/export',
+  '/export.csv',
   authorize([Role.fleet_manager, Role.financial_analyst]),
   exportCSVReport
+);
+
+// Individual metric endpoints
+router.get(
+  '/fuel-efficiency',
+  authorize([Role.fleet_manager, Role.financial_analyst]),
+  getFuelEfficiency
+);
+router.get(
+  '/fleet-utilization',
+  authorize([Role.fleet_manager, Role.financial_analyst]),
+  getFleetUtilization
+);
+router.get(
+  '/operational-cost',
+  authorize([Role.fleet_manager, Role.financial_analyst]),
+  getOperationalCost
+);
+router.get(
+  '/vehicle-roi',
+  authorize([Role.fleet_manager, Role.financial_analyst]),
+  getVehicleRoi
 );
 
 export default router;
