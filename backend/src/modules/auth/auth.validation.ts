@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { Role } from '@prisma/client';
+import { z } from 'zod'
+import { Role } from '@prisma/client'
 
 export const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -8,12 +8,12 @@ export const registerSchema = z.object({
   role: z.nativeEnum(Role, {
     errorMap: () => ({ message: 'Invalid role selection' }),
   }),
-});
+})
 
 export const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
-});
+})
 
-export type RegisterInput = z.infer<typeof registerSchema>;
-export type LoginInput = z.infer<typeof loginSchema>;
+export type RegisterInput = z.infer<typeof registerSchema>
+export type LoginInput = z.infer<typeof loginSchema>

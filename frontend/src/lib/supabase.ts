@@ -6,11 +6,8 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn(
     '[TransitOps] Supabase env vars are missing. ' +
-    'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in frontend/.env',
+      'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in frontend/.env',
   )
 }
 
-export const supabase = createClient(
-  supabaseUrl ?? '',
-  supabaseAnonKey ?? '',
-)
+export const supabase = createClient(supabaseUrl ?? '', supabaseAnonKey ?? '')

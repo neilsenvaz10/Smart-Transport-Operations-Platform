@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { VehicleStatus } from '@prisma/client';
+import { z } from 'zod'
+import { VehicleStatus } from '@prisma/client'
 
 export const createVehicleSchema = z.object({
   registrationNumber: z.string().min(3, 'Registration number must be at least 3 characters long'),
@@ -10,9 +10,9 @@ export const createVehicleSchema = z.object({
   acquisitionCost: z.number().positive('Acquisition cost must be a positive number'),
   status: z.nativeEnum(VehicleStatus).default(VehicleStatus.available),
   region: z.string().optional().nullable(),
-});
+})
 
-export const updateVehicleSchema = createVehicleSchema.partial();
+export const updateVehicleSchema = createVehicleSchema.partial()
 
-export type CreateVehicleInput = z.infer<typeof createVehicleSchema>;
-export type UpdateVehicleInput = z.infer<typeof updateVehicleSchema>;
+export type CreateVehicleInput = z.infer<typeof createVehicleSchema>
+export type UpdateVehicleInput = z.infer<typeof updateVehicleSchema>
