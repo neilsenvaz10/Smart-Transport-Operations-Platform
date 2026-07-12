@@ -13,7 +13,7 @@ import {
   Search, Bell, ChevronDown, ChevronLeft, ChevronRight, Plus, Download,
   Eye, Edit2, Trash2, CheckCircle, Clock, AlertTriangle, Calendar,
   TrendingUp, TrendingDown, Activity, LogOut, ArrowRight, DollarSign,
-  Navigation, X, RefreshCw, Zap, Shield, MapPin,
+  Navigation, X, RefreshCw, Zap, Shield, MapPin, Sun, Moon,
 } from "lucide-react";
 
 import {
@@ -156,6 +156,8 @@ interface FleetContextType {
   setRole: (r: "admin" | "manager" | "dispatcher" | "viewer") => void;
   currentUser: { name: string; roleName: string; email?: string; phone?: string; dept?: string };
   setCurrentUser: (u: any) => void;
+  theme: "light" | "dark";
+  toggleTheme: () => void;
 }
 
 const FleetContext = createContext<FleetContextType | null>(null);
@@ -212,6 +214,29 @@ function FleetProvider({ children, role, setRole }: { children: React.ReactNode,
   };
 
   const { user } = useAuth();
+
+  const [theme, setTheme] = useState<"light" | "dark">(
+    () => (localStorage.getItem("theme") as "light" | "dark") || "light"
+  );
+
+  const toggleTheme = () => {
+    setTheme(t => {
+      const next = t === "light" ? "dark" : "light";
+      localStorage.setItem("theme", next);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+      root.setAttribute("data-theme", "dark");
+    } else {
+      root.classList.remove("dark");
+      root.removeAttribute("data-theme");
+    }
+  }, [theme]);
   
   const [currentUser, setCurrentUser] = useState({
     name: user?.name ?? "User",
@@ -264,6 +289,8 @@ function FleetProvider({ children, role, setRole }: { children: React.ReactNode,
       setRole,
       currentUser,
       setCurrentUser,
+      theme,
+      toggleTheme,
     }}>
       {children}
     </FleetContext.Provider>
@@ -535,7 +562,7 @@ function Sidebar({ screen, setScreen, collapsed, onToggle }: {
 
 function TopNav({ screen }: { screen: Screen }) {
   const { title, sub } = pageMeta[screen];
-  const { currentUser } = useFleet();
+  const { currentUser, theme, toggleTheme } = useFleet();
   const { user } = useAuth();
 
   const displayName = user?.name || currentUser.name;
@@ -553,6 +580,9 @@ function TopNav({ screen }: { screen: Screen }) {
           <input type="text" placeholder="Search anything…"
             className="pl-8 pr-4 py-2 text-[13px] border border-slate-200 rounded-lg bg-slate-50 w-52 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all" />
         </div>
+        <button onClick={toggleTheme} className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Toggle Theme">
+          {theme === "dark" ? <Sun size={15} className="text-slate-500" /> : <Moon size={15} className="text-slate-500" />}
+        </button>
         <button className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors">
           <Bell size={15} className="text-slate-500" />
           <span className="absolute top-1.5 right-1.5 size-1.5 bg-red-500 rounded-full" />
@@ -2421,7 +2451,7 @@ function ReportsScreen() {
     const roiVal = Math.max(0, Math.round((computedProfit / acqCost) * 100));
 
     return {
-      vehicle: v.plate,
+      vehicle: v.registrationNumber || v.plate,
       roi: roiVal || 15
     };
   }).slice(0, 5);
@@ -2452,11 +2482,96 @@ function ReportsScreen() {
     return d;
   });
 
+  const handleExportPDF = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const html = `
+      <html>
+        <head>
+          <title>TransitOps Reports - ${new Date().toLocaleDateString()}</title>
+          <style>
+            body { font-family: system-ui, sans-serif; color: #0f172a; padding: 2rem; background-color: #ffffff; }
+            h1 { font-size: 20px; font-weight: bold; border-bottom: 2px solid #2563eb; padding-bottom: 0.5rem; margin-bottom: 1.5rem; color: #1e3a8a; }
+            .meta { font-size: 12px; color: #64748b; margin-bottom: 2rem; }
+            .kpis { display: grid; grid-template-cols: repeat(4, 1fr); gap: 1rem; margin-bottom: 2.5rem; }
+            .kpi { border: 1px solid #e2e8f0; padding: 1rem; border-radius: 12px; background-color: #f8fafc; }
+            .kpi-title { font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.05em; }
+            .kpi-value { font-size: 20px; font-weight: 800; margin-top: 0.25rem; color: #0f172a; }
+            h3 { font-size: 14px; font-weight: 700; color: #1e293b; margin-top: 2rem; margin-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.25rem; }
+            table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; margin-bottom: 2rem; }
+            th, td { border-bottom: 1px solid #e2e8f0; padding: 0.75rem; text-align: left; font-size: 12px; }
+            th { background-color: #f8fafc; font-weight: 600; color: #475569; }
+            td { color: #334155; }
+            .footer { text-align: center; color: #94a3b8; font-size: 10px; margin-top: 4rem; border-top: 1px dashed #e2e8f0; padding-top: 1rem; }
+          </style>
+        </head>
+        <body>
+          <h1>TransitOps Fleet Reports Summary</h1>
+          <div class="meta">Generated by ${displayName} on ${new Date().toLocaleString()}</div>
+          
+          <div class="kpis">
+            <div class="kpi">
+              <div class="kpi-title">Total Trips</div>
+              <div class="kpi-value">${totalTripsCount}</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-title">Total Distance</div>
+              <div class="kpi-value">${totalDistance.toLocaleString()} mi</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-title">Avg Cost / Trip</div>
+              <div class="kpi-value">$${avgCostPerTrip}</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-title">Avg Safety Score</div>
+              <div class="kpi-value">${avgSafetyScore}/100</div>
+            </div>
+          </div>
+
+          <h3>Vehicle ROI Breakdown (Top 5 Vehicles)</h3>
+          <table>
+            <thead>
+              <tr><th>Vehicle Registration Plate</th><th>ROI Percentage</th></tr>
+            </thead>
+            <tbody>
+              ${dynamicRoiChartData.map(r => `<tr><td><strong>${r.vehicle}</strong></td><td>${r.roi}%</td></tr>`).join("")}
+            </tbody>
+          </table>
+
+          <h3>Monthly Operational Costs Breakdown</h3>
+          <table>
+            <thead>
+              <tr><th>Month</th><th>Fuel Expenses</th><th>Maintenance Expenses</th><th>Tolls & Other</th></tr>
+            </thead>
+            <tbody>
+              ${dynamicOpCostChartData.map(d => `<tr><td><strong>${d.month}</strong></td><td>$${d.fuel.toFixed(2)}</td><td>$${d.maintenance.toFixed(2)}</td><td>$${d.tolls.toFixed(2)}</td></tr>`).join("")}
+            </tbody>
+          </table>
+
+          <div class="footer">TransitOps Fleet Management Platform &copy; ${new Date().getFullYear()}</div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            }
+          </script>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   return (
     <div className="space-y-5">
-      <div className="flex justify-end">
-        <button onClick={() => exportCSV()} disabled={isExporting} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold rounded-xl transition-all shadow-sm shadow-blue-600/20 whitespace-nowrap disabled:opacity-50">
+      <div className="flex justify-end gap-3">
+        <button onClick={() => exportCSV()} disabled={isExporting} className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-700 text-[13px] font-medium rounded-xl hover:bg-slate-50 transition-colors whitespace-nowrap disabled:opacity-50">
           <Download size={14} />{isExporting ? "Exporting..." : "Export CSV"}
+        </button>
+        <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold rounded-xl transition-all shadow-sm shadow-blue-600/20 whitespace-nowrap">
+          <Download size={14} />Export PDF
         </button>
       </div>
 

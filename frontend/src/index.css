@@ -89,6 +89,19 @@
    ────────────────────────────────────────────────────────── */
 .dark,
 [data-theme="dark"] {
+  /* Override Tailwind v4 default colors for dark mode */
+  --color-white:            #1e293b; /* card/modal surface background (slate-800) */
+  --color-slate-50:         #0f172a; /* app background (slate-900) */
+  --color-slate-100:        #334155; /* borders (slate-700) */
+  --color-slate-200:        #475569; /* strong borders (slate-600) */
+  
+  --color-slate-950:        #ffffff; /* headings */
+  --color-slate-900:        #f1f5f9; /* primary text */
+  --color-slate-700:        #cbd5e1; /* body text */
+  --color-slate-600:        #94a3b8; /* secondary text */
+  --color-slate-500:        #64748b; /* muted text */
+  --color-slate-400:        #475569; /* muted icons */
+
   --color-primary:          #3B82F6;
   --color-primary-hover:    #2563EB;
   --color-primary-muted:    #1E3A5F;
