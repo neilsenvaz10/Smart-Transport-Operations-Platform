@@ -23,16 +23,22 @@ export const createDriver = async (req: Request, res: Response, next: NextFuncti
 
 export const getDrivers = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { status } = req.query
+    const { status, search, sortBy, sortOrder, page, limit } = req.query
     const filters = {
       status: status ? (status as DriverStatus) : undefined,
+      search: search ? String(search) : undefined,
+      sortBy: sortBy ? String(sortBy) : undefined,
+      sortOrder: sortOrder === 'desc' ? 'desc' as const : 'asc' as const,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
     }
 
-    const drivers = await DriverService.getAll(filters)
+    const result = await DriverService.getAll(filters)
     res.json({
       status: 'success',
-      results: drivers.length,
-      data: drivers,
+      results: result.data.length,
+      data: result.data,
+      meta: result.meta,
     })
   } catch (error) {
     next(error)

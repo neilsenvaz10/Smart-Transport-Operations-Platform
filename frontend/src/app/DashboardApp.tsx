@@ -14,7 +14,7 @@ import {
   Eye, Edit2, Trash2, CheckCircle, Clock, AlertTriangle, Calendar,
   TrendingUp, TrendingDown, Activity, LogOut, ArrowRight, DollarSign,
   Navigation, X, RefreshCw, Zap, Shield, MapPin,
-  Droplet, Receipt
+  Droplet, Receipt, AlertCircle, FileText, UploadCloud
 } from "lucide-react";
 
 import {
@@ -565,10 +565,194 @@ function Sidebar({ screen, setScreen, collapsed, onToggle }: {
 
 // ─── TOP NAV ─────────────────────────────────────────────────────────────────
 
-function TopNav({ screen }: { screen: Screen }) {
+import { useSearch } from "./hooks/useSearch";
+
+function CommandPalette({ open, onClose, setScreen }: { open: boolean; onClose: () => void; setScreen: (s: Screen) => void }) {
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const { data, isLoading } = useSearch(debouncedQuery);
+
+  useEffect(() => {
+    if (!open) setQuery("");
+  }, [open]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    if (open) window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[10vh] px-4">
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[80vh]">
+        <div className="flex items-center px-4 py-3 border-b border-slate-100">
+          <Search size={18} className="text-slate-400 shrink-0" />
+          <input
+            autoFocus
+            type="text"
+            className="flex-1 px-3 py-2 text-[15px] text-slate-900 placeholder-slate-400 bg-transparent focus:outline-none"
+            placeholder="Search vehicles, drivers, trips, maintenance, expenses..."
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+          />
+          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 bg-slate-100 rounded">
+            <span className="text-[10px] font-bold px-1">ESC</span>
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-2">
+          {isLoading && query.trim() !== "" && (
+            <div className="py-12 text-center text-[13px] text-slate-400">Searching...</div>
+          )}
+          {!isLoading && query.trim() !== "" && data && (
+            <div className="space-y-4 p-2">
+              {data.vehicles?.length > 0 && (
+                <div>
+                  <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">Vehicles</h4>
+                  {data.vehicles.map((v: any) => (
+                    <button key={v.id} onClick={() => { setScreen("vehicles"); onClose(); }} className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Truck size={14} className="text-blue-500 shrink-0" />
+                        <div>
+                          <p className="text-[13px] font-semibold text-slate-900">{v.nameModel || v.name}</p>
+                          <p className="text-[11px] text-slate-500">{v.registrationNumber || v.plate}</p>
+                        </div>
+                      </div>
+                      <ChevronRight size={14} className="text-slate-300" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {data.drivers?.length > 0 && (
+                <div>
+                  <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">Drivers</h4>
+                  {data.drivers.map((d: any) => (
+                    <button key={d.id} onClick={() => { setScreen("drivers"); onClose(); }} className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Users size={14} className="text-indigo-500 shrink-0" />
+                        <div>
+                          <p className="text-[13px] font-semibold text-slate-900">{d.name}</p>
+                          <p className="text-[11px] text-slate-500">{d.licenseNumber || d.license}</p>
+                        </div>
+                      </div>
+                      <ChevronRight size={14} className="text-slate-300" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {data.trips?.length > 0 && (
+                <div>
+                  <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">Trips</h4>
+                  {data.trips.map((t: any) => (
+                    <button key={t.id} onClick={() => { setScreen("dispatch"); onClose(); }} className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Navigation size={14} className="text-emerald-500 shrink-0" />
+                        <div>
+                          <p className="text-[13px] font-semibold text-slate-900">{t.origin || t.source} → {t.destination}</p>
+                          <p className="text-[11px] text-slate-500">{t.id}</p>
+                        </div>
+                      </div>
+                      <ChevronRight size={14} className="text-slate-300" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {data.maintenance?.length > 0 && (
+                <div>
+                  <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">Maintenance</h4>
+                  {data.maintenance.map((m: any) => (
+                    <button key={m.id} onClick={() => { setScreen("maintenance"); onClose(); }} className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Wrench size={14} className="text-orange-500 shrink-0" />
+                        <div>
+                          <p className="text-[13px] font-semibold text-slate-900">{m.type}</p>
+                          <p className="text-[11px] text-slate-500">{m.vehicle?.nameModel || m.vehicleName}</p>
+                        </div>
+                      </div>
+                      <ChevronRight size={14} className="text-slate-300" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {data.fuelLogs?.length > 0 && (
+                <div>
+                  <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">Fuel Logs</h4>
+                  {data.fuelLogs.map((f: any) => (
+                    <button key={f.id} onClick={() => { setScreen("fuel"); onClose(); }} className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Droplet size={14} className="text-violet-500 shrink-0" />
+                        <div>
+                          <p className="text-[13px] font-semibold text-slate-900">{f.station}</p>
+                          <p className="text-[11px] text-slate-500">{f.vehicle?.nameModel || f.vehicleName} - {f.date}</p>
+                        </div>
+                      </div>
+                      <ChevronRight size={14} className="text-slate-300" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {data.expenses?.length > 0 && (
+                <div>
+                  <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">Expenses</h4>
+                  {data.expenses.map((e: any) => (
+                    <button key={e.id} onClick={() => { setScreen("fuel"); onClose(); }} className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Receipt size={14} className="text-rose-500 shrink-0" />
+                        <div>
+                          <p className="text-[13px] font-semibold text-slate-900">{e.category}</p>
+                          <p className="text-[11px] text-slate-500">{e.description} - ${e.amount}</p>
+                        </div>
+                      </div>
+                      <ChevronRight size={14} className="text-slate-300" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {(!data.vehicles?.length && !data.drivers?.length && !data.trips?.length && !data.maintenance?.length && !data.fuelLogs?.length && !data.expenses?.length) && (
+                <div className="py-12 text-center text-[13px] text-slate-500">No results found for "{query}"</div>
+              )}
+            </div>
+          )}
+          {!query.trim() && (
+             <div className="py-12 flex flex-col items-center justify-center text-center">
+                <Search size={24} className="text-slate-300 mb-2" />
+                <p className="text-[13px] text-slate-400">Search for vehicles, drivers, trips, or records</p>
+             </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TopNav({ screen, setScreen }: { screen: Screen, setScreen: (s: Screen) => void }) {
   const { title, sub } = pageMeta[screen];
   const { currentUser } = useFleet();
   const { user } = useAuth();
+  
+  const [cmdOpen, setCmdOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCmdOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const displayName = user?.name || currentUser.name;
 
@@ -580,11 +764,12 @@ function TopNav({ screen }: { screen: Screen }) {
       </div>
       <div className="flex items-center gap-4">
         <HealthBadge />
-        <div className="relative hidden md:block">
+        <button onClick={() => setCmdOpen(true)} className="relative hidden md:flex items-center w-[240px] pl-9 pr-4 py-2 bg-[#F8FAFC] border border-[#E5E7EB] rounded-lg text-[13px] text-slate-400 hover:border-slate-300 transition-colors">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input type="text" placeholder="Search anything…"
-            className="pl-9 pr-4 py-2 bg-[#F8FAFC] border border-[#E5E7EB] rounded-lg text-[13px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all w-[240px]" />
-        </div>
+          <span className="flex-1 text-left">Search anything…</span>
+          <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-bold text-slate-400 bg-white border border-slate-200 rounded">⌘K</kbd>
+        </button>
+        <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} setScreen={setScreen} />
         <button className="relative p-2 hover:bg-slate-50 rounded-full transition-colors">
           <Bell size={16} className="text-slate-500 hover:text-slate-900" />
           <span className="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full border-2 border-white" />
@@ -831,6 +1016,33 @@ function DashboardScreen() {
               </div>
             </div>
           )}
+
+          {/* Expiring Licenses Widget */}
+          {expiringDrivers.length > 0 && (
+            <div className="bg-white rounded-xl border border-red-100 shadow-sm p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <AlertCircle size={14} className="text-red-500" />
+                <h3 className="text-[13px] font-semibold text-slate-900">Expiring Licenses</h3>
+              </div>
+              <div className="space-y-3">
+                {expiringDrivers.map(d => {
+                  const expiry = d.licenseExpiry || d.expiry;
+                  const days = Math.ceil((new Date(expiry).getTime() - TODAY.getTime()) / (1000 * 60 * 60 * 24));
+                  return (
+                    <div key={d.id} className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Avatar name={d.name} size="sm" />
+                        <span className="text-[12px] font-medium text-slate-700 truncate">{d.name}</span>
+                      </div>
+                      <span className={cn("text-[11px] font-bold px-2 py-1 rounded-full whitespace-nowrap", days <= 7 ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700")}>
+                        {days} days
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -840,10 +1052,22 @@ function DashboardScreen() {
 // ─── VEHICLES ────────────────────────────────────────────────────────────────
 
 function VehiclesScreen() {
-  const { vehicles, createVehicle, deleteVehicle, role } = useFleet();
+  const { role } = useFleet();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [showModal, setShowModal] = useState(false);
+  const [showDocsModal, setShowDocsModal] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
+  const [page, setPage] = useState(1);
+  const [mockDocs, setMockDocs] = useState<Record<string, {name: string; size: string; date: string}[]>>({});
+
+  // Use the React Query hook directly
+  const { vehicles, meta, isLoading, createVehicle, deleteVehicle } = useVehicles({
+    search,
+    status: filter === "all" ? undefined : filter,
+    page,
+    limit: 50
+  });
 
   // Form states – mapped to backend Prisma schema fields
   const [formNameModel, setFormNameModel] = useState("");
@@ -858,28 +1082,16 @@ function VehiclesScreen() {
 
   const isReadOnly = role === "dispatcher" || role === "viewer";
 
-  // Normalise status for filtering (backend uses on_trip / in_shop)
-  const matchesFilter = (v: any) => {
-    if (filter === "all") return true;
-    const s = v.status;
-    if (filter === "available") return s === "available";
-    if (filter === "on_trip") return s === "on_trip" || s === "on-trip";
-    if (filter === "in_shop") return s === "in_shop" || s === "in-shop";
-    if (filter === "retired") return s === "retired";
-    return s === filter;
-  };
+  const list = vehicles;
 
-  const list = vehicles.filter(v =>
-    matchesFilter(v) &&
-    ((v.nameModel ?? v.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
-     (v.registrationNumber ?? v.plate ?? "").toLowerCase().includes(search.toLowerCase()))
-  );
-
+  // We no longer have local counts for all statuses since we paginate/filter on the backend, 
+  // but we can default to total or just not show exact other counts if unavailable without separate queries.
+  // We'll approximate based on what we have or just show total from meta.
   const counts = {
-    all: vehicles.length,
-    available: vehicles.filter(v => v.status === "available").length,
-    on_trip: vehicles.filter(v => v.status === "on_trip" || v.status === "on-trip").length,
-    in_shop: vehicles.filter(v => v.status === "in_shop" || v.status === "in-shop").length,
+    all: (meta as any)?.total ?? 0,
+    available: filter === "available" ? (meta as any)?.total : "-",
+    on_trip: filter === "on_trip" ? (meta as any)?.total : "-",
+    in_shop: filter === "in_shop" ? (meta as any)?.total : "-",
   };
 
   const resetForm = () => {
@@ -992,7 +1204,10 @@ function VehiclesScreen() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {list.map(v => (
+              {isLoading && (
+                <tr><TD colSpan={9} className="text-center py-8 text-slate-400">Loading vehicles...</TD></tr>
+              )}
+              {!isLoading && list.map(v => (
                 <tr key={v.id} className="hover:bg-slate-50/50 transition-colors group">
                   <TD>
                     <div className="flex items-center gap-3">
@@ -1011,11 +1226,14 @@ function VehiclesScreen() {
                   <TD><span className="text-[12px] text-slate-400">{v.region ?? "—"}</span></TD>
                   <TD>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-1.5 hover:bg-blue-50 rounded-lg transition-colors"><Eye size={12} className="text-blue-600" /></button>
+                      <button onClick={() => { setSelectedVehicle(v); setShowDocsModal(true); }} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors tooltip-trigger" title="Manage Documents">
+                        <FileText size={12} className="text-slate-500" />
+                      </button>
+                      <button className="p-1.5 hover:bg-blue-50 rounded-lg transition-colors tooltip-trigger" title="View Details"><Eye size={12} className="text-blue-600" /></button>
                       {!isReadOnly && (
                         <>
-                          <button className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"><Edit2 size={12} className="text-slate-500" /></button>
-                          <button onClick={() => handleDeleteVehicle(v.id)} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={12} className="text-red-500" /></button>
+                          <button className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors tooltip-trigger" title="Edit"><Edit2 size={12} className="text-slate-500" /></button>
+                          <button onClick={() => handleDeleteVehicle(v.id)} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors tooltip-trigger" title="Delete"><Trash2 size={12} className="text-red-500" /></button>
                         </>
                       )}
                     </div>
@@ -1086,6 +1304,78 @@ function VehiclesScreen() {
           </div>
         </div>
       </Modal>
+
+      {/* Manage Documents Modal */}
+      <Modal open={showDocsModal} onClose={() => { setShowDocsModal(false); setSelectedVehicle(null); }} title={`Documents: ${selectedVehicle?.nameModel || selectedVehicle?.name || ""}`}>
+        <div className="space-y-5">
+          {/* Upload Zone */}
+          <div 
+            className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-colors cursor-pointer group"
+            onClick={() => {
+              if (selectedVehicle) {
+                setMockDocs(prev => ({
+                  ...prev,
+                  [selectedVehicle.id]: [
+                    ...(prev[selectedVehicle.id] || []),
+                    { name: `Document_${Math.floor(Math.random()*1000)}.pdf`, size: "2.4 MB", date: new Date().toLocaleDateString() }
+                  ]
+                }));
+              }
+            }}
+          >
+            <div className="w-12 h-12 bg-slate-50 group-hover:bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 transition-colors">
+              <UploadCloud size={20} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
+            </div>
+            <p className="text-[14px] font-semibold text-slate-900">Click or drag documents to upload</p>
+            <p className="text-[12px] text-slate-500 mt-1">Supports PDF, JPG, PNG up to 10MB</p>
+          </div>
+
+          {/* Document List */}
+          <div className="space-y-3">
+            <h4 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide">Uploaded Documents</h4>
+            {(!selectedVehicle || !mockDocs[selectedVehicle.id] || mockDocs[selectedVehicle.id].length === 0) ? (
+              <div className="py-6 text-center text-[12px] text-slate-400 border border-slate-100 rounded-xl bg-slate-50">
+                No documents uploaded yet.
+              </div>
+            ) : (
+              <div className="border border-slate-100 rounded-xl divide-y divide-slate-50 max-h-[300px] overflow-y-auto">
+                {mockDocs[selectedVehicle.id].map((doc, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 hover:bg-slate-50/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <FileText size={14} className="text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-[13px] font-semibold text-slate-900">{doc.name}</p>
+                        <p className="text-[11px] text-slate-400">{doc.size} • Uploaded {doc.date}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors" title="Download"><Download size={14} /></button>
+                      <button 
+                        className="p-1.5 text-slate-400 hover:text-red-500 transition-colors" 
+                        title="Delete"
+                        onClick={() => {
+                          setMockDocs(prev => ({
+                            ...prev,
+                            [selectedVehicle.id]: prev[selectedVehicle.id].filter((_, i) => i !== idx)
+                          }));
+                        }}
+                      ><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <div className="flex justify-end pt-2">
+            <button onClick={() => { setShowDocsModal(false); setSelectedVehicle(null); }} className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold transition-colors">
+              Done
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -1095,10 +1385,17 @@ function VehiclesScreen() {
 
 function DriversScreen() {
   const { role } = useFleet();
-  const { drivers, createDriverAsync, deleteDriverAsync } = useDrivers();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [showModal, setShowModal] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const { drivers, meta, isLoading, createDriverAsync, deleteDriverAsync } = useDrivers({
+    search,
+    status: filter === "all" ? undefined : filter,
+    page,
+    limit: 50
+  });
 
   // Form states
   const [formName, setFormName] = useState("");
@@ -1111,10 +1408,7 @@ function DriversScreen() {
 
   const isReadOnly = role === "dispatcher" || role === "viewer";
 
-  const list = drivers.filter(d =>
-    (filter === "all" || d.status === filter) &&
-    d.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const list = drivers;
 
   const handleAddDriver = async () => {
     if (!formName || !formPhone || !formLicenseNumber || !formExpiry || !formSafetyScore) {
@@ -1208,7 +1502,10 @@ function DriversScreen() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {list.map(d => (
+              {isLoading && (
+                <tr><TD colSpan={8} className="text-center py-8 text-slate-400">Loading drivers...</TD></tr>
+              )}
+              {!isLoading && list.map(d => (
                 <tr key={d.id} className="hover:bg-slate-50/50 transition-colors group">
                   <TD>
                     <div className="flex items-center gap-3">
@@ -1305,16 +1602,28 @@ function DispatchScreen() {
   const {
     vehicles,
     drivers,
-    trips,
-    createTrip,
-    dispatchTrip,
-    completeTrip,
-    cancelTrip,
     role
   } = useFleet();
 
   const [viewMode, setViewMode] = useState<"list" | "create">("list");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
+
+  const {
+    trips,
+    meta,
+    isLoading,
+    createTrip,
+    dispatchTrip,
+    completeTrip,
+    cancelTrip,
+  } = useTrips({
+    status: statusFilter === "all" ? undefined : statusFilter,
+    page,
+    limit: 50
+  });
+
+
   const [selectedTrip, setSelectedTrip] = useState<any | null>(null);
 
   // Wizard state
@@ -1483,7 +1792,7 @@ function DispatchScreen() {
     alert(`Trip completed successfully.`);
   };
 
-  const filteredTrips = trips.filter(t => statusFilter === "all" || t.status === statusFilter);
+  const filteredTrips = trips;
 
   const stepDot = (n: number) => cn(
     "size-8 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0 transition-all",
@@ -1531,7 +1840,10 @@ function DispatchScreen() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {filteredTrips.map(t => (
+                {isLoading && (
+                  <tr><TD colSpan={9} className="text-center py-8 text-slate-400">Loading trips...</TD></tr>
+                )}
+                {!isLoading && filteredTrips.map(t => (
                   <tr key={t.id} className="hover:bg-slate-50/50 transition-colors group">
                     <TD><span className="text-[11px] font-mono font-medium text-slate-500">{t.id}</span></TD>
                     <TD>
@@ -1927,7 +2239,12 @@ function DispatchScreen() {
 // ─── MAINTENANCE ─────────────────────────────────────────────────────────────
 
 function MaintenanceScreen() {
-  const { vehicles, setVehicles, maintenance, createMaintenance, closeMaintenance, role } = useFleet();
+  const { vehicles, setVehicles, role } = useFleet();
+  const [page, setPage] = useState(1);
+  const { maintenanceLogs: maintenance, isLoading, createMaintenance, closeMaintenance } = useMaintenance({
+    page,
+    limit: 50
+  });
   const [showForm, setShowForm] = useState(false);
 
   // Form states
@@ -2108,7 +2425,10 @@ function MaintenanceScreen() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {maintenance.map(m => (
+              {isLoading && (
+                <tr><TD colSpan={7} className="text-center py-8 text-slate-400">Loading maintenance records...</TD></tr>
+              )}
+              {!isLoading && maintenance.map(m => (
                 <tr key={m.id} className="hover:bg-slate-50/50 transition-colors">
                   <TD><span className="text-[11px] font-mono text-slate-400">{m.id}</span></TD>
                   <TD><span className="text-[13px] text-slate-700">{m.vehicle?.nameModel || m.vehicle?.registrationNumber || m.vehicleName}</span></TD>
@@ -2145,7 +2465,12 @@ function MaintenanceScreen() {
 // ─── FUEL & EXPENSES ─────────────────────────────────────────────────────────
 
 function FuelScreen() {
-  const { vehicles, setVehicles, drivers, fuelLogs, createFuelLog, expenses, createExpense, maintenance, role } = useFleet();
+  const { vehicles, setVehicles, drivers, role } = useFleet();
+  const [page, setPage] = useState(1);
+  const { fuelLogs, isLoading: isFuelLoading, createFuelLog } = useFuel({ page, limit: 50 });
+  const { expenses, isLoading: isExpLoading, createExpense } = useExpenses({ page, limit: 50 });
+  const { maintenanceLogs: maintenance } = useMaintenance({ limit: 100 });
+  
   const [showFuel, setShowFuel] = useState(false);
   const [showExp, setShowExp] = useState(false);
 
@@ -2305,7 +2630,10 @@ function FuelScreen() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {fuelLogs.map(f => (
+              {isFuelLoading && (
+                <tr><TD colSpan={8} className="text-center py-8 text-slate-400">Loading fuel logs...</TD></tr>
+              )}
+              {!isFuelLoading && fuelLogs.map(f => (
                 <tr key={f.id} className="hover:bg-slate-50/50 transition-colors">
                   <TD><span className="text-[13px] font-semibold text-slate-900">{f.vehicle?.nameModel || f.vehicle?.registrationNumber || f.vehicleName}</span></TD>
                   <TD><span className="text-[13px] font-semibold text-slate-900">{f.driver?.name || f.driver}</span></TD>
@@ -2367,7 +2695,10 @@ function FuelScreen() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {expenses.map(e => (
+              {isExpLoading && (
+                <tr><TD colSpan={6} className="text-center py-8 text-slate-400">Loading expenses...</TD></tr>
+              )}
+              {!isExpLoading && expenses.map(e => (
                 <tr key={e.id} className="hover:bg-slate-50/50 transition-colors">
                   <TD><span className="text-[13px] font-semibold text-slate-900">{e.vehicle?.nameModel || e.vehicle?.registrationNumber || e.vehicleName}</span></TD>
                   <TD>
@@ -2383,7 +2714,7 @@ function FuelScreen() {
                   </TD>
                 </tr>
               ))}
-              {expenses.length === 0 && (
+              {!isExpLoading && expenses.length === 0 && (
                 <tr>
                   <TD colSpan={6}>
                     <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -2892,7 +3223,7 @@ function AppContent({ screen, setScreen, collapsed, setCollapsed }: {
     <div className="flex h-screen overflow-hidden bg-[#F7F9FC] font-[Inter,sans-serif] text-slate-900">
       <Sidebar screen={screen} setScreen={setScreen} collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <TopNav screen={screen} />
+        <TopNav screen={screen} setScreen={setScreen} />
         <main className="flex-1 overflow-auto p-6 lg:p-8">
           <div className="max-w-[1400px] mx-auto space-y-6">
             {screen === "dashboard"   && <DashboardScreen />}

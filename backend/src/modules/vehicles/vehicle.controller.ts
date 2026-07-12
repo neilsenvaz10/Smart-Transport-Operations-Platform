@@ -23,18 +23,24 @@ export const createVehicle = async (req: Request, res: Response, next: NextFunct
 
 export const getVehicles = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { status, type, region } = req.query
+    const { status, type, region, search, sortBy, sortOrder, page, limit } = req.query
     const filters = {
       status: status ? (status as VehicleStatus) : undefined,
       type: type ? String(type) : undefined,
       region: region ? String(region) : undefined,
+      search: search ? String(search) : undefined,
+      sortBy: sortBy ? String(sortBy) : undefined,
+      sortOrder: sortOrder === 'desc' ? 'desc' as const : 'asc' as const,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
     }
 
-    const vehicles = await VehicleService.getAll(filters)
+    const result = await VehicleService.getAll(filters)
     res.json({
       status: 'success',
-      results: vehicles.length,
-      data: vehicles,
+      results: result.data.length,
+      data: result.data,
+      meta: result.meta,
     })
   } catch (error) {
     next(error)

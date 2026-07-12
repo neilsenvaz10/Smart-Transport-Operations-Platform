@@ -25,14 +25,22 @@ export const createFuelLog = async (req: AuthRequest, res: Response, next: NextF
 
 export const getFuelLogs = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { vehicleId } = req.query
-    const logs = await FuelService.getAll({
+    const { vehicleId, search, sortBy, sortOrder, page, limit } = req.query
+    
+    const result = await FuelService.getAll({
       vehicleId: vehicleId ? String(vehicleId) : undefined,
+      search: search ? String(search) : undefined,
+      sortBy: sortBy ? String(sortBy) : undefined,
+      sortOrder: sortOrder === 'desc' ? 'desc' as const : 'asc' as const,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
     })
+    
     res.json({
       status: 'success',
-      results: logs.length,
-      data: logs,
+      results: result.data.length,
+      data: result.data,
+      meta: result.meta,
     })
   } catch (error) {
     next(error)

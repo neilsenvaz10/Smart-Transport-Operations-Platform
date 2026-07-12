@@ -22,14 +22,54 @@ export class DriverService {
     });
   }
 
-  static async getAll(filters: { status?: DriverStatus }) {
+  static async getAll(filters: { 
+    status?: DriverStatus;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    page?: number;
+    limit?: number;
+  }) {
     const where: any = {};
     if (filters.status) where.status = filters.status;
+    
+    if (filters.search) {
+      where.OR = [
+        { name: { contains: filters.search, mode: 'insensitive' } },
+        { licenseNumber: { contains: filters.search, mode: 'insensitive' } }
+      ]
+    }
 
-    return prisma.driver.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
+    const orderBy: any = {}
+    if (filters.sortBy) {
+      orderBy[filters.sortBy] = filters.sortOrder || 'asc'
+    } else {
+      orderBy.createdAt = 'desc'
+    }
+
+    const limit = filters.limit ? Number(filters.limit) : 50;
+    const page = filters.page ? Number(filters.page) : 1;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      prisma.driver.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      prisma.driver.count({ where })
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 
   static async getExpiringDrivers() {

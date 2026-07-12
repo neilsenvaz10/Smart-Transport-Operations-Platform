@@ -55,18 +55,58 @@ export class TripService {
     })
   }
 
-  static async getAll(filters: { status?: TripStatus }) {
+  static async getAll(filters: { 
+    status?: TripStatus;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    page?: number;
+    limit?: number;
+  }) {
     const where: any = {}
     if (filters.status) where.status = filters.status
+    
+    if (filters.search) {
+      where.OR = [
+        { source: { contains: filters.search, mode: 'insensitive' } },
+        { destination: { contains: filters.search, mode: 'insensitive' } }
+      ]
+    }
 
-    return prisma.trip.findMany({
-      where,
-      include: {
-        vehicle: true,
-        driver: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    })
+    const orderBy: any = {}
+    if (filters.sortBy) {
+      orderBy[filters.sortBy] = filters.sortOrder || 'asc'
+    } else {
+      orderBy.createdAt = 'desc'
+    }
+
+    const limit = filters.limit ? Number(filters.limit) : 50;
+    const page = filters.page ? Number(filters.page) : 1;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      prisma.trip.findMany({
+        where,
+        include: {
+          vehicle: true,
+          driver: true,
+        },
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      prisma.trip.count({ where })
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
   }
 
   static async getById(id: string) {

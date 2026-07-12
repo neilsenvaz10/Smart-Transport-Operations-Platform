@@ -18,16 +18,58 @@ export class VehicleService {
     })
   }
 
-  static async getAll(filters: { status?: VehicleStatus; type?: string; region?: string }) {
+  static async getAll(filters: { 
+    status?: VehicleStatus; 
+    type?: string; 
+    region?: string;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    page?: number;
+    limit?: number;
+  }) {
     const where: any = {}
     if (filters.status) where.status = filters.status
     if (filters.type) where.type = { contains: filters.type, mode: 'insensitive' }
     if (filters.region) where.region = { contains: filters.region, mode: 'insensitive' }
+    
+    if (filters.search) {
+      where.OR = [
+        { nameModel: { contains: filters.search, mode: 'insensitive' } },
+        { registrationNumber: { contains: filters.search, mode: 'insensitive' } }
+      ]
+    }
 
-    return prisma.vehicle.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    })
+    const orderBy: any = {}
+    if (filters.sortBy) {
+      orderBy[filters.sortBy] = filters.sortOrder || 'asc'
+    } else {
+      orderBy.createdAt = 'desc'
+    }
+
+    const limit = filters.limit ? Number(filters.limit) : 50;
+    const page = filters.page ? Number(filters.page) : 1;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      prisma.vehicle.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      prisma.vehicle.count({ where })
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
   }
 
   static async getById(id: string) {

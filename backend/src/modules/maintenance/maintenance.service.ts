@@ -48,11 +48,53 @@ export class MaintenanceService {
     })
   }
 
-  static async getAll() {
-    return prisma.maintenanceLog.findMany({
-      include: { vehicle: true },
-      orderBy: { createdAt: 'desc' },
-    })
+  static async getAll(filters: { 
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    page?: number;
+    limit?: number;
+  } = {}) {
+    const where: any = {}
+    
+    if (filters.search) {
+      where.OR = [
+        { description: { contains: filters.search, mode: 'insensitive' } },
+        { technician: { contains: filters.search, mode: 'insensitive' } }
+      ]
+    }
+
+    const orderBy: any = {}
+    if (filters.sortBy) {
+      orderBy[filters.sortBy] = filters.sortOrder || 'asc'
+    } else {
+      orderBy.createdAt = 'desc'
+    }
+
+    const limit = filters.limit ? Number(filters.limit) : 50;
+    const page = filters.page ? Number(filters.page) : 1;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      prisma.maintenanceLog.findMany({
+        where,
+        include: { vehicle: true },
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      prisma.maintenanceLog.count({ where })
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
   }
 
   static async getById(id: string) {

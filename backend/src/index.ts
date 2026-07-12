@@ -14,7 +14,10 @@ import fuelRoutes from './modules/fuel/fuel.routes';
 import expenseRoutes from './modules/expenses/expense.routes';
 import reportsRoutes from './modules/reports/reports.routes';
 import userRoutes from './modules/users/user.routes';
+import documentRoutes from './modules/documents/document.routes';
+import searchRoutes from './modules/search/search.routes';
 import { startLicenseReminderCron } from './jobs/licenseReminders';
+import path from 'path';
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '5000', 10);
@@ -23,7 +26,7 @@ const CORS_ORIGINS = CORS_ORIGIN_RAW.split(',').map(o => o.trim());
 const NODE_ENV = process.env.NODE_ENV ?? 'development';
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false })); // Allow serving static images across origins
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -43,6 +46,9 @@ app.use(morgan(NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static uploads
+app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/vehicles', vehicleRoutes);
@@ -52,6 +58,8 @@ app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/fuel', fuelRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/vehicles', documentRoutes);
+app.use('/api/search', searchRoutes);
 app.use('/api/users', userRoutes);
 
 /**

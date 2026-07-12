@@ -1,26 +1,40 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 
-const normalizeArray = (raw: unknown, key: string): any[] => {
- if (Array.isArray(raw)) return raw;
- if (raw && typeof raw === 'object') {
- const obj = raw as Record<string, unknown>;
- const inner = obj[key] ?? obj.data ?? obj.items;
- if (Array.isArray(inner)) return inner as any[];
- }
- return [];
+const normalizeResponse = (raw: unknown, key: string) => {
+  if (Array.isArray(raw)) return { data: raw, meta: null };
+  if (raw && typeof raw === 'object') {
+    const obj = raw as Record<string, unknown>;
+    const inner = obj[key] ?? obj.data ?? obj.items;
+    let data: any[] = [];
+    if (Array.isArray(inner)) data = inner as any[];
+    return { data, meta: (obj.meta as any) || null };
+  }
+  return { data: [], meta: null };
 };
 
-export const useTrips = () => {
+export const useTrips = (filters?: Record<string, any>) => {
  const queryClient = useQueryClient();
- const { data, isLoading, isError } = useQuery({
- queryKey: ['trips'],
+
+ const queryParams = new URLSearchParams();
+ if (filters) {
+   Object.entries(filters).forEach(([key, value]) => {
+     if (value !== undefined && value !== '') {
+       queryParams.append(key, String(value));
+     }
+   });
+ }
+
+ const { data: result, isLoading, isError } = useQuery({
+ queryKey: ['trips', filters],
  queryFn: async () => {
- const res = await api.get('/trips');
- return normalizeArray(res.data, 'trips');
+ const res = await api.get(`/trips?${queryParams.toString()}`);
+ return normalizeResponse(res.data, 'trips');
  },
  });
- const trips = data ?? [];
+ 
+ const trips = result?.data ?? [];
+ const meta = result?.meta;
  const create = useMutation({
  mutationFn: (newTrip: any) => api.post('/trips', newTrip),
  onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trips'] }),
@@ -39,6 +53,7 @@ export const useTrips = () => {
  });
  return {
  trips,
+ meta,
  isLoading,
  isError,
  createTrip: create.mutate,

@@ -25,11 +25,21 @@ export const createMaintenance = async (req: AuthRequest, res: Response, next: N
 
 export const getMaintenances = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const logs = await MaintenanceService.getAll()
+    const { search, sortBy, sortOrder, page, limit } = req.query
+    const filters = {
+      search: search ? String(search) : undefined,
+      sortBy: sortBy ? String(sortBy) : undefined,
+      sortOrder: sortOrder === 'desc' ? 'desc' as const : 'asc' as const,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    }
+
+    const result = await MaintenanceService.getAll(filters)
     res.json({
       status: 'success',
-      results: logs.length,
-      data: logs,
+      results: result.data.length,
+      data: result.data,
+      meta: result.meta,
     })
   } catch (error) {
     next(error)

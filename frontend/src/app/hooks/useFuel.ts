@@ -1,32 +1,45 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 
-const normalizeArray = (raw: unknown, key: string): any[] => {
- if (Array.isArray(raw)) return raw;
- if (raw && typeof raw === 'object') {
- const obj = raw as Record<string, unknown>;
- const inner = obj[key] ?? obj.data ?? obj.items;
- if (Array.isArray(inner)) return inner as any[];
- }
- return [];
+const normalizeResponse = (raw: unknown, key: string) => {
+  if (Array.isArray(raw)) return { data: raw, meta: null };
+  if (raw && typeof raw === 'object') {
+    const obj = raw as Record<string, unknown>;
+    const inner = obj[key] ?? obj.data ?? obj.items;
+    let data: any[] = [];
+    if (Array.isArray(inner)) data = inner as any[];
+    return { data, meta: (obj.meta as any) || null };
+  }
+  return { data: [], meta: null };
 };
 
-export const useFuel = () => {
+export const useFuel = (filters?: Record<string, any>) => {
  const queryClient = useQueryClient();
- const { data, isLoading, isError } = useQuery({
- queryKey: ['fuel'],
+
+ const queryParams = new URLSearchParams();
+ if (filters) {
+   Object.entries(filters).forEach(([key, value]) => {
+     if (value !== undefined && value !== '') {
+       queryParams.append(key, String(value));
+     }
+   });
+ }
+
+ const { data: result, isLoading, isError } = useQuery({
+ queryKey: ['fuel', filters],
  queryFn: async () => {
- const res = await api.get('/fuel');
- return normalizeArray(res.data, 'fuelLogs');
+ const res = await api.get(`/fuel?${queryParams.toString()}`);
+ return normalizeResponse(res.data, 'fuelLogs');
  },
  });
  
- const fuelLogs = data ?? [];
+ const fuelLogs = result?.data ?? [];
+ const meta = result?.meta;
  
  const create = useMutation({
  mutationFn: (newFuel: any) => api.post('/fuel', newFuel),
  onSuccess: () => queryClient.invalidateQueries({ queryKey: ['fuel'] }),
  });
  
- return { fuelLogs, isLoading, isError, createFuelLog: create.mutate };
+ return { fuelLogs, meta, isLoading, isError, createFuelLog: create.mutate };
 };

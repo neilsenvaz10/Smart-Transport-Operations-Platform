@@ -26,16 +26,22 @@ export const createTrip = async (req: AuthRequest, res: Response, next: NextFunc
 
 export const getTrips = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { status } = req.query
+    const { status, search, sortBy, sortOrder, page, limit } = req.query
     const filters = {
       status: status ? (status as TripStatus) : undefined,
+      search: search ? String(search) : undefined,
+      sortBy: sortBy ? String(sortBy) : undefined,
+      sortOrder: sortOrder === 'desc' ? 'desc' as const : 'asc' as const,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
     }
 
-    const trips = await TripService.getAll(filters)
+    const result = await TripService.getAll(filters)
     res.json({
       status: 'success',
-      results: trips.length,
-      data: trips,
+      results: result.data.length,
+      data: result.data,
+      meta: result.meta,
     })
   } catch (error) {
     next(error)

@@ -4,27 +4,43 @@ import api from '../services/api';
 // Coerce the API response into a Vehicle[] shape.
 // The backend may return an array directly, or an envelope like { data: [...] }.
 // On error, axios rejects the promise so we still end up with [] in the cache.
-const normalizeVehicles = (raw: unknown): any[] => {
- if (Array.isArray(raw)) return raw;
- if (raw && typeof raw === 'object') {
- const obj = raw as { data?: unknown; vehicles?: unknown; items?: unknown };
- if (Array.isArray(obj.data)) return obj.data as any[];
- if (Array.isArray(obj.vehicles)) return obj.vehicles as any[];
- if (Array.isArray(obj.items)) return obj.items as any[];
- }
- return [];
+const normalizeResponse = (raw: unknown) => {
+  if (Array.isArray(raw)) return { data: raw, meta: null };
+  if (raw && typeof raw === 'object') {
+    const obj = raw as { data?: unknown; vehicles?: unknown; items?: unknown; meta?: unknown };
+    let data: any[] = [];
+    if (Array.isArray(obj.data)) data = obj.data as any[];
+    else if (Array.isArray(obj.vehicles)) data = obj.vehicles as any[];
+    else if (Array.isArray(obj.items)) data = obj.items as any[];
+    
+    return { data, meta: obj.meta || null };
+  }
+  return { data: [], meta: null };
 };
 
-export const useVehicles = () => {
+export const useVehicles = (filters?: Record<string, any>) => {
  const queryClient = useQueryClient();
- const { data, isLoading, isError } = useQuery({
- queryKey: ['vehicles'],
+ 
+ const queryParams = new URLSearchParams();
+ if (filters) {
+   Object.entries(filters).forEach(([key, value]) => {
+     if (value !== undefined && value !== '') {
+       queryParams.append(key, String(value));
+     }
+   });
+ }
+
+ const { data: result, isLoading, isError } = useQuery({
+ queryKey: ['vehicles', filters],
  queryFn: async () => {
- const res = await api.get('/vehicles');
- return normalizeVehicles(res.data);
+ const res = await api.get(`/vehicles?${queryParams.toString()}`);
+ return normalizeResponse(res.data);
  },
  });
- const vehicles = data ?? [];
+ 
+ const vehicles = result?.data ?? [];
+ const meta = result?.meta;
+
  const create = useMutation({
  mutationFn: (newVehicle: any) => api.post('/vehicles', newVehicle),
  onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vehicles'] }),
@@ -39,6 +55,7 @@ export const useVehicles = () => {
  });
  return {
  vehicles,
+ meta,
  isLoading,
  isError,
  createVehicle: create.mutate,

@@ -1,29 +1,42 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 
-const normalizeDrivers = (raw: unknown): any[] => {
- if (Array.isArray(raw)) return raw;
- if (raw && typeof raw === 'object') {
- const obj = raw as { data?: unknown; drivers?: unknown; items?: unknown };
- if (Array.isArray(obj.data)) return obj.data as any[];
- if (Array.isArray(obj.drivers)) return obj.drivers as any[];
- if (Array.isArray(obj.items)) return obj.items as any[];
- }
- return [];
+const normalizeResponse = (raw: unknown) => {
+  if (Array.isArray(raw)) return { data: raw, meta: null };
+  if (raw && typeof raw === 'object') {
+    const obj = raw as { data?: unknown; drivers?: unknown; items?: unknown; meta?: unknown };
+    let data: any[] = [];
+    if (Array.isArray(obj.data)) data = obj.data as any[];
+    else if (Array.isArray(obj.drivers)) data = obj.drivers as any[];
+    else if (Array.isArray(obj.items)) data = obj.items as any[];
+    
+    return { data, meta: obj.meta || null };
+  }
+  return { data: [], meta: null };
 };
 
-export const useDrivers = () => {
+export const useDrivers = (filters?: Record<string, any>) => {
  const queryClient = useQueryClient();
 
- const { data, isLoading, isError, error } = useQuery({
- queryKey: ['drivers'],
+ const queryParams = new URLSearchParams();
+ if (filters) {
+   Object.entries(filters).forEach(([key, value]) => {
+     if (value !== undefined && value !== '') {
+       queryParams.append(key, String(value));
+     }
+   });
+ }
+
+ const { data: result, isLoading, isError, error } = useQuery({
+ queryKey: ['drivers', filters],
  queryFn: async () => {
- const res = await api.get('/drivers');
- return normalizeDrivers(res.data);
+ const res = await api.get(`/drivers?${queryParams.toString()}`);
+ return normalizeResponse(res.data);
  },
  });
 
- const drivers = data ?? [];
+ const drivers = result?.data ?? [];
+ const meta = result?.meta;
 
  const create = useMutation({
  mutationFn: (newDriver: any) => api.post('/drivers', newDriver),
@@ -42,6 +55,7 @@ export const useDrivers = () => {
 
  return {
  drivers,
+ meta,
  isLoading,
  isError,
  error,
