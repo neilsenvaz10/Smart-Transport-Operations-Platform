@@ -2410,7 +2410,9 @@ function FuelScreen() {
 const tooltipStyle = { fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" };
 
 function ReportsScreen() {
-  const { trips, vehicles, drivers, fuelLogs, expenses, maintenance } = useFleet();
+  const { trips, vehicles, drivers, fuelLogs, expenses, maintenance, currentUser } = useFleet();
+  const { user } = useAuth();
+  const displayName = user?.name || currentUser?.name || "User";
   const { kpis, exportCSV, isExporting } = useReports();
 
   const parseVal = (v: any) => {

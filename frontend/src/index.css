@@ -217,3 +217,55 @@
     &:disabled { opacity: 0.5; cursor: not-allowed; }
   }
 }
+
+/* ──────────────────────────────────────────────────────────
+   Dynamic Dark Theme Override mappings
+   ────────────────────────────────────────────────────────── */
+.dark body {
+  background-color: var(--color-slate-50) !important;
+  color: var(--color-slate-900) !important;
+}
+
+.dark .bg-white {
+  background-color: var(--color-white) !important;
+}
+
+.dark .bg-slate-50 {
+  background-color: var(--color-slate-50) !important;
+}
+
+.dark .text-slate-950,
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700 {
+  color: var(--color-slate-900) !important;
+}
+
+.dark .text-slate-600,
+.dark .text-slate-500,
+.dark .text-slate-400 {
+  color: var(--color-slate-600) !important;
+}
+
+.dark .border-slate-100,
+.dark .border-slate-50,
+.dark .border-slate-200 {
+  border-color: var(--color-slate-100) !important;
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: var(--color-white) !important;
+  color: var(--color-slate-900) !important;
+  border-color: var(--color-slate-100) !important;
+}
+
+.dark input::placeholder {
+  color: var(--color-slate-500) !important;
+}
+
+/* Modals & Popovers override */
+.dark .bg-white\/80 {
+  background-color: rgba(30, 41, 59, 0.8) !important;
+}
